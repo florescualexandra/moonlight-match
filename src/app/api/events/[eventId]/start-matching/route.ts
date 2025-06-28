@@ -4,8 +4,9 @@ import { calculateCompatibility } from '../../../../../lib/matching';
 
 const prisma = new PrismaClient();
 
-export async function POST(req: NextRequest, { params }: { params: { eventId: string } }) {
-    const { eventId } = params;
+export async function POST(req: NextRequest) {
+    const url = new URL(req.url);
+    const eventId = url.pathname.split("/").slice(-2, -1)[0];
 
     if (!eventId) {
         return NextResponse.json({ error: 'Event ID is required.' }, { status: 400 });
@@ -18,9 +19,15 @@ export async function POST(req: NextRequest, { params }: { params: { eventId: st
             data: { isMatching: true, isMatchingComplete: false },
         });
 
-        // 2. Fetch all users for the event
+        // 2. Fetch all users for the event (users with tickets for this event)
         const users = await prisma.user.findMany({
-            where: { eventId },
+            where: {
+                tickets: {
+                    some: {
+                        eventId: eventId
+                    }
+                }
+            },
         });
 
         if (users.length < 2) {
@@ -69,7 +76,7 @@ export async function POST(req: NextRequest, { params }: { params: { eventId: st
                 where: { userId: user.id },
                 orderBy: { score: 'desc' },
                 take: 3,
-                include: { matchedUser: { select: { name: true } } },
+                include: { matchedUser: { select: { name: true } }, },
             });
 
             console.log(`\nTop matches for ${user.name}:`);
