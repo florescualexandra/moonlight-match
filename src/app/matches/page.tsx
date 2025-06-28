@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { loadStripe } from '@stripe/stripe-js';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -69,7 +69,7 @@ const BlurredMatchCard = ({ onRevealClick }: { onRevealClick: () => void }) => (
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-export default function MatchesPage() {
+function MatchesContent() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,7 +79,6 @@ export default function MatchesPage() {
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
-
 
   useEffect(() => {
     const email = localStorage.getItem('mm_email');
@@ -190,7 +189,6 @@ export default function MatchesPage() {
   const revealedMatches = matches.filter(m => m.isInitiallyRevealed || m.isPaidReveal);
   const hiddenMatches = matches.filter(m => !m.isInitiallyRevealed && !m.isPaidReveal);
 
-
   return (
     <div className="min-h-screen bg-[#181c24] p-8">
        {paymentStatus === 'success' && (
@@ -213,5 +211,13 @@ export default function MatchesPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function MatchesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <MatchesContent />
+    </Suspense>
   );
 } 
