@@ -2,17 +2,15 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <main style={{ fontFamily: 'sans-serif', padding: 40, maxWidth: 600, margin: '0 auto' }}>
-      <h1 style={{ color: '#D4AF37', fontSize: 40 }}>Moonlight Match</h1>
-      <p style={{ fontSize: 20, margin: '24px 0' }}>
-        Welcome to Moonlight Match! Buy tickets and get matched at our exclusive events.
+    <div style={{ color: '#D4AF37', textAlign: 'center', marginTop: 100 }}>
+      <h1>Welcome to Moonlight Match!</h1>
+      <p>Get started by logging in or browsing events.</p>
+      <p>
+        <a href="/matches" style={{ color: '#D4AF37', textDecoration: 'underline' }}>See your matches</a>
       </p>
-      <p style={{ fontSize: 18 }}>
-        Contact: <a href="mailto:your@email.com">your@email.com</a>
+      <p>
+        <a href="/admin-matching" style={{ color: '#D4AF37', textDecoration: 'underline' }}>Admin Matching</a>
       </p>
-      <p style={{ marginTop: 32 }}>
-        <Link href="/terms">Terms of Service</Link> | <Link href="/privacy">Privacy Policy</Link>
-      </p>
-    </main>
+    </div>
   );
 }
