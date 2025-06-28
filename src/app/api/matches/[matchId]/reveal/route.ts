@@ -6,13 +6,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-05-28.basil"
 });
 
-export async function POST(
-  request: Request,
-  { params }: { params: { matchId: string } }
-) {
+export async function POST(request: Request) {
+  const url = new URL(request.url);
+  const matchId = url.pathname.split("/").slice(-2, -1)[0];
   try {
     const match = await prisma.match.findUnique({
-      where: { id: params.matchId },
+      where: { id: matchId },
       include: {
         user: true,
         matchedUser: true
