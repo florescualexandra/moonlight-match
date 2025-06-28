@@ -18,34 +18,38 @@ export async function POST(req: NextRequest) {
   const hashed = await bcrypt.hash(password, 10);
 
   // Try to find a FormResponse for this email and event
-  let formResponse = null;
+  let formResponseData = null;
   if (eventId) {
     const responses = await prisma.formResponse.findMany({
       where: { },
     });
-    formResponse = responses.find(r => {
+    const matchingResponse = responses.find(r => {
       if (typeof r.data === 'object' && r.data !== null) {
         const dataObj = r.data as Record<string, any>;
         return dataObj['Email'] === email;
       }
       return false;
     });
+    if (matchingResponse) {
+      formResponseData = matchingResponse.data;
+    }
   }
   // Set retainDataConsent if present in form
   let retainDataConsent = false;
-  if (formResponse && typeof formResponse.data === 'object' && formResponse.data !== null) {
-    const dataObj = formResponse.data as Record<string, any>;
+  if (formResponseData && typeof formResponseData === 'object' && formResponseData !== null) {
+    const dataObj = formResponseData as Record<string, any>;
     const consent = dataObj["Retain Data Consent"];
     retainDataConsent = consent === true || consent === 'true' || consent === 1 || consent === '1';
   }
-  // Create user and link formResponse
+  // Create user with formResponse as Json field
   const user = await prisma.user.create({
     data: {
       email,
       password: hashed,
       name,
       description,
-      formResponse: formResponse ? { connect: { id: formResponse.id } } : undefined,
+      formResponse: formResponseData || undefined,
+      dataRetention: retainDataConsent,
     },
   });
   // If eventId is present, create a ticket to link user to event

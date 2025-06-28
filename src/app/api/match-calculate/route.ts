@@ -25,22 +25,32 @@ function numericSimilarity(a: any, b: any, maxDiff = 4) {
 // TODO: Add deal breaker, gender, age, and text similarity logic as in the advanced version
 
 export async function POST(req: NextRequest) {
-  // 1. Get all users and their form responses
+  // Get eventId from the request body
+  const { eventId } = await req.json();
+  if (!eventId) {
+    return NextResponse.json({ error: "eventId is required" }, { status: 400 });
+  }
+
+  // Get all users for this event (with tickets)
   const users = await prisma.user.findMany({
-    include: { formResponse: true },
+    where: {
+      tickets: {
+        some: { eventId }
+      }
+    }
   });
-  // 2. For each user, calculate compatibility with every other user
+
   const matchesToCreate = [];
   for (const userA of users) {
     if (!userA.formResponse) continue;
-    let dataA: any = userA.formResponse.data;
+    let dataA: any = userA.formResponse;
     if (typeof dataA === 'string') {
       try { dataA = JSON.parse(dataA); } catch { dataA = {}; }
     }
-    const scores: { userId: number; matchId: number; score: number }[] = [];
+    const scores: { userId: string; matchedUserId: string; score: number }[] = [];
     for (const userB of users) {
       if (userA.id === userB.id || !userB.formResponse) continue;
-      let dataB: any = userB.formResponse.data;
+      let dataB: any = userB.formResponse;
       if (typeof dataB === 'string') {
         try { dataB = JSON.parse(dataB); } catch { dataB = {}; }
       }
@@ -54,17 +64,22 @@ export async function POST(req: NextRequest) {
         dataB["What is your favorite music genre? (Select all that apply)"]
       );
       const score = 0.5 * hobbiesScore + 0.5 * musicScore;
-      scores.push({ userId: userA.id, matchId: userB.id, score });
+      scores.push({ userId: userA.id, matchedUserId: userB.id, score });
     }
-    // 3. Sort and take top 3
     scores.sort((a, b) => b.score - a.score);
     const top3 = scores.slice(0, 3);
     for (const match of top3) {
-      matchesToCreate.push({ ...match, released: false });
+      matchesToCreate.push({
+        userId: match.userId,
+        matchedUserId: match.matchedUserId,
+        eventId,
+        score: match.score,
+        isInitiallyRevealed: false,
+        isPaidReveal: false,
+      });
     }
   }
-  // 4. Delete old matches and insert new ones
-  await prisma.match.deleteMany({});
+  await prisma.match.deleteMany({ where: { eventId } });
   await prisma.match.createMany({ data: matchesToCreate });
   return NextResponse.json({ status: 'done', count: matchesToCreate.length });
 }
