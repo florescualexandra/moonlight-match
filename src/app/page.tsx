@@ -64,6 +64,8 @@ export default function Home() {
           <span className="hidden md:inline">|</span>
           <a href="mailto:contact@moonlightmatch.com" className="hover:text-[#D4AF37] transition">Contact</a>
           <span className="hidden md:inline">|</span>
+          <a href="tel:+40732733512" className="hover:text-[#D4AF37] transition">+40 732 733 512</a>
+          <span className="hidden md:inline">|</span>
           <a href="#" className="hover:text-[#D4AF37] transition">Instagram</a>
         </div>
       </footer>
