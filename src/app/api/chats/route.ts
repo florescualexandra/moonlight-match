@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { NextResponse } from 'next/server';
-import { prisma } from "../../lib/prisma";
+import { prisma } from "../../../lib/prisma";
 
 // GET all chats for a user
 export async function GET(request: Request) {
