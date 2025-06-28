@@ -4,13 +4,17 @@ import Stripe from "stripe";
 
 const prisma = new PrismaClient();
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-05-28.basil"
-});
+// Initialize Stripe only if the secret key is available
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-05-28.basil"
+    })
+  : null;
 
 export async function POST(request: Request) {
   const url = new URL(request.url);
   const matchId = url.pathname.split("/").slice(-2, -1)[0];
+  
   try {
     const match = await prisma.match.findUnique({
       where: { id: matchId },
@@ -24,6 +28,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Match not found" },
         { status: 404 }
+      );
+    }
+
+    if (!stripe) {
+      return NextResponse.json(
+        { error: "Payment service not configured" },
+        { status: 500 }
       );
     }
 
