@@ -11,18 +11,18 @@ export async function POST(req: NextRequest) {
     const unrevealedMatches = await prisma.match.findMany({
       where: {
         userId: userId,
-        extraRevealed: false,
-        released: true
+        isPaidReveal: false,
+        isInitiallyRevealed: true
       },
       orderBy: {
         score: 'desc'
       },
       take: 2,
       include: {
-        match: {
+        matchedUser: {
           select: {
             name: true,
-            photo: true,
+            image: true,
             description: true
           }
         }
@@ -43,18 +43,17 @@ export async function POST(req: NextRequest) {
         }
       },
       data: {
-        extraRevealed: true
+        isPaidReveal: true
       }
     });
 
     // Format matches for response
     const formattedMatches = unrevealedMatches.map(match => ({
       id: match.id,
-      name: match.match.name,
-      photo: match.match.photo,
-      description: match.match.description,
-      score: match.score,
-      similarities: match.similarities
+      name: match.matchedUser.name,
+      photo: match.matchedUser.image,
+      description: match.matchedUser.description,
+      score: match.score
     }));
 
     return NextResponse.json({
