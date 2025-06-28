@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { prisma } from "../../../../lib/prisma";
 
 // Initialize Stripe only if the secret key is available
 const stripe = process.env.STRIPE_SECRET_KEY 
@@ -33,9 +34,18 @@ export async function POST(req: NextRequest) {
       if (paymentIntent.metadata?.type === 'event_ticket') {
         const { userId, eventId } = paymentIntent.metadata;
         
-        // The ticket was already created in the purchase endpoint
-        // Here we could add additional logic like sending confirmation emails
-        console.log(`Ticket purchase successful for user ${userId} and event ${eventId}`);
+        // Prevent duplicate tickets
+        const existingTicket = await prisma.ticket.findFirst({
+          where: { userId, eventId }
+        });
+        if (!existingTicket) {
+          await prisma.ticket.create({
+            data: { userId, eventId }
+          });
+          console.log(`Ticket created for user ${userId} and event ${eventId}`);
+        } else {
+          console.log(`Ticket already exists for user ${userId} and event ${eventId}`);
+        }
       }
     }
 

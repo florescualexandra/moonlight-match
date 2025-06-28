@@ -27,18 +27,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already has a ticket for this event
-    const existingTicket = await prisma.ticket.findFirst({
-      where: { userId, eventId }
-    });
-
-    if (existingTicket) {
-      return NextResponse.json(
-        { error: "You already have a ticket for this event" },
-        { status: 409 }
-      );
-    }
-
     // Get event details
     const event = await prisma.event.findUnique({
       where: { id: eventId }
@@ -63,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Create Stripe payment intent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: 2500, // $25.00 in cents - adjust price as needed
+      amount: 2500, // $25.00 in cents
       currency: "usd",
       metadata: {
         userId: userId,
@@ -73,17 +61,8 @@ export async function POST(request: NextRequest) {
       description: `Ticket for ${event.name}`,
     });
 
-    // Create ticket record
-    const ticket = await prisma.ticket.create({
-      data: {
-        userId,
-        eventId
-      }
-    });
-
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
-      ticketId: ticket.id,
       event: {
         id: event.id,
         name: event.name,
