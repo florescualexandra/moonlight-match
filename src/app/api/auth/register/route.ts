@@ -46,9 +46,17 @@ export async function POST(req: NextRequest) {
       name,
       description,
       formResponse: formResponse ? { connect: { id: formResponse.id } } : undefined,
-      event: { connect: { id: eventId } },
     },
   });
+  // If eventId is present, create a ticket to link user to event
+  if (eventId) {
+    await prisma.ticket.create({
+      data: {
+        userId: user.id,
+        eventId,
+      },
+    });
+  }
   return NextResponse.json({ user, token: "dummy-token" });
 }
 
