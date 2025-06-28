@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
-import { prisma } from "../../../../lib/prisma";
+import { PrismaClient } from '@prisma/client';
 import { mkdirSync } from 'fs';
+
+const prisma = new PrismaClient();
 
 // Ensure the upload directory exists
 const uploadDir = join(process.cwd(), 'public', 'uploads');
@@ -10,9 +12,9 @@ mkdirSync(uploadDir, { recursive: true });
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.formData();
-    const file: File | null = data.get('file') as unknown as File;
-    const email: string | null = data.get('email') as string;
+    const data = await request.formData() as any;
+    const file = data.get('file') as File | null;
+    const email = data.get('email') as string | null;
 
     if (!file || !email) {
       return NextResponse.json({ success: false, error: 'File and email are required.' });
