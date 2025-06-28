@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../../lib/prisma";
 
-export async function POST(
-  request: Request,
-  { params }: { params: { eventId: string } }
-) {
+export async function POST(request: Request) {
+  const url = new URL(request.url);
+  const eventId = url.pathname.split("/").slice(-3, -2)[0];
   try {
     const { matches } = await request.json();
 
@@ -21,7 +20,9 @@ export async function POST(
         prisma.match.create({
           data: {
             user: { connect: { id: match.userId } },
-            matchedUser: { connect: { id: match.matchedUserId } }
+            matchedUser: { connect: { id: match.matchedUserId } },
+            event: { connect: { id: eventId } },
+            score: typeof match.score === 'number' ? match.score : 0
           }
         })
       )
@@ -38,8 +39,9 @@ export async function POST(
 }
 
 // GET: fetch matches for an event
-export async function GET(request: Request, context: { params: any }) {
-  const { eventId } = await context.params;
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const eventId = url.pathname.split("/").slice(-3, -2)[0];
   try {
     const matches = await prisma.match.findMany({
       where: { eventId },
