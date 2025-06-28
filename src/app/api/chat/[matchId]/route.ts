@@ -9,13 +9,9 @@ export async function GET(req: NextRequest) {
     if (!matchId) {
       return NextResponse.json({ error: 'No matchId provided' }, { status: 400 });
     }
-    const chat = await prisma.chat.findFirst({
-      where: {
-        OR: [
-          { user1Id: parseInt(matchId) },
-          { user2Id: parseInt(matchId) }
-        ]
-      }
+    const chat = await prisma.chat.findUnique({
+      where: { matchId },
+      include: { messages: true }
     });
 
     if (!chat) {
@@ -38,39 +34,28 @@ export async function POST(req: NextRequest) {
     if (!matchId) {
       return NextResponse.json({ error: 'No matchId provided' }, { status: 400 });
     }
-    const { message } = await req.json();
-    const userId = 1; // TODO: Get from session
+    const { message, userId } = await req.json(); // userId should be provided by the client or session
 
-    let chat = await prisma.chat.findFirst({
-      where: {
-        OR: [
-          { user1Id: parseInt(matchId) },
-          { user2Id: parseInt(matchId) }
-        ]
-      }
+    let chat = await prisma.chat.findUnique({
+      where: { matchId },
+      include: { messages: true }
     });
 
     if (!chat) {
       chat = await prisma.chat.create({
         data: {
-          user1Id: userId,
-          user2Id: parseInt(matchId),
-          messages: []
-        }
+          matchId,
+        },
+        include: { messages: true }
       });
     }
 
-    const newMessage = {
-      from: userId,
-      text: message,
-      timestamp: new Date()
-    };
-
-    const updatedMessages = [...(chat.messages as any[]), newMessage];
-
-    await prisma.chat.update({
-      where: { id: chat.id },
-      data: { messages: updatedMessages }
+    const newMessage = await prisma.message.create({
+      data: {
+        chatId: chat.id,
+        senderId: userId,
+        content: message,
+      }
     });
 
     return NextResponse.json({ message: newMessage });
