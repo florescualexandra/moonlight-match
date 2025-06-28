@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { calculateCompatibility } from '@/lib/matching';
+import { calculateCompatibility } from '../../../../../lib/matching';
 
 const prisma = new PrismaClient();
 
