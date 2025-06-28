@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../../lib/prisma";
 
-export async function GET(request: Request, contextOrPromise: { params: { eventId: string } } | Promise<{ params: { eventId: string } }>) {
-  const context = await contextOrPromise;
-  const { params } = context;
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const eventId = url.pathname.split("/").slice(-2, -1)[0];
   try {
     const users = await prisma.user.findMany({
       where: {
-        eventId: params.eventId,
-        isAdmin: false
+        isAdmin: false,
+        tickets: {
+          some: {
+            eventId: eventId
+          }
+        }
       },
       select: {
         id: true,
