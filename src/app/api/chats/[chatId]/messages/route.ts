@@ -3,8 +3,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from "../../../../../lib/prisma";
 
 // GET all messages for a chat
-export async function GET(request: Request, { params }: { params: { chatId: string } }) {
-  const { chatId } = params;
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const chatId = url.pathname.split("/").slice(-3, -2)[0];
 
   try {
     const messages = await prisma.message.findMany({
@@ -27,8 +28,9 @@ export async function GET(request: Request, { params }: { params: { chatId: stri
 }
 
 // POST a new message to a chat
-export async function POST(request: Request, { params }: { params: { chatId: string } }) {
-  const { chatId } = params;
+export async function POST(request: Request) {
+  const url = new URL(request.url);
+  const chatId = url.pathname.split("/").slice(-3, -2)[0];
   const { content, senderId } = await request.json();
 
   if (!content || !senderId) {
