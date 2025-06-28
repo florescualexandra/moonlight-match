@@ -158,12 +158,26 @@ export default function EventsPage() {
       <div className="max-w-4xl w-full">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-serif font-bold text-[#D4AF37]">Event Management</h1>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold hover:bg-[#e6c97a] transition"
-          >
-            Create New Event
-          </button>
+          <div className="flex gap-4 items-center">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold hover:bg-[#e6c97a] transition"
+            >
+              Create New Event
+            </button>
+            <button
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('mm_logged_in', 'false');
+                  localStorage.removeItem('mm_user_profile');
+                  window.location.href = "/";
+                }
+              }}
+              className="px-6 py-3 rounded-full border-2 border-[#D4AF37] text-[#D4AF37] font-bold bg-transparent hover:bg-[#D4AF37]/10 transition"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         {loading ? (
