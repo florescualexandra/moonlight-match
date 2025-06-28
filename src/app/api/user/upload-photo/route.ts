@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
-import { prisma } from '@/lib/prisma';
+import { prisma } from "../../../../lib/prisma";
 import { mkdirSync } from 'fs';
 
 // Ensure the upload directory exists

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "../../../../lib/prisma";
 
 export async function GET(request: Request, contextOrPromise: { params: { eventId: string } } | Promise<{ params: { eventId: string } }>) {
   const context = await contextOrPromise;

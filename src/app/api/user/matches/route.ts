@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from "../../../../lib/prisma";
 
 function getDescriptiveCommonality(question: string, answer: string): string {
     const qLower = question.toLowerCase();
