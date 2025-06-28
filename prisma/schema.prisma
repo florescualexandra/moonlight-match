@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  image         String?
+  description   String?
+  formResponse  Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  dataRetention Boolean   @default(false)
+  isAdmin       Boolean   @default(false)
+  matches       Match[]   @relation("UserMatches")
+  matchedWith   Match[]   @relation("MatchedWith")
+  sentMessages  Message[]
+  tickets       Ticket[]
+}
+
+model Event {
+  id                 String    @id @default(cuid())
+  name               String
+  date               DateTime
+  formUrl            String
+  isMatching         Boolean   @default(false)
+  isMatchingComplete Boolean   @default(false)
+  matchesSent        Boolean   @default(false)
+  matches            Match[]
+  tickets            Ticket[]
+}
+
+model Match {
+  id                   String    @id @default(cuid())
+  user                 User      @relation("UserMatches", fields: [userId], references: [id])
+  userId               String
+  matchedUser          User      @relation("MatchedWith", fields: [matchedUserId], references: [id])
+  matchedUserId        String
+  score                Float
+  isInitiallyRevealed  Boolean   @default(false)
+  isPaidReveal         Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  event                Event     @relation(fields: [eventId], references: [id])
+  eventId              String
+  chat                 Chat?
+
+  @@unique([userId, matchedUserId, eventId])
+}
+
+model Chat {
+  id        String    @id @default(cuid())
+  match     Match     @relation(fields: [matchId], references: [id])
+  matchId   String    @unique
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  chatId    String
+  sender    User     @relation(fields: [senderId], references: [id])
+  senderId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model formResponse {
+  id    String @id @default(uuid())
+  data  Json
+  // ... other fields
+}
+
+model Ticket {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  event     Event    @relation(fields: [eventId], references: [id])
+  eventId   String
+  createdAt DateTime @default(now())
+}
