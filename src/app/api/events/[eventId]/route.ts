@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from '../../../../lib/prisma';
 
-export async function GET(request: Request, { params }: { params: { eventId: string } }) {
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const eventId = url.pathname.split("/").pop();
   try {
     const event = await prisma.event.findUnique({
-      where: { id: params.eventId },
+      where: { id: eventId },
     });
 
     if (!event) {
