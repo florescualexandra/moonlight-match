@@ -8,27 +8,41 @@ async function main() {
   const adminPassword = 'admin';
   const adminHashedPassword = await bcrypt.hash(adminPassword, 10);
 
+  // Create default event if it doesn't exist
+  const defaultEventId = 'default-event';
+  const defaultEvent = await prisma.event.upsert({
+    where: { id: defaultEventId },
+    update: {},
+    create: {
+      id: defaultEventId,
+      name: 'Default Event',
+      date: new Date(),
+      formUrl: 'http://example.com/form',
+    },
+  });
+
   const admin = await prisma.user.findUnique({
     where: { email: adminEmail },
   });
 
   if (!admin) {
-    await prisma.user.create({
+    const newAdmin = await prisma.user.create({
       data: {
         email: adminEmail,
         password: adminHashedPassword,
         name: 'Admin',
         isAdmin: true,
         dataRetention: false,
-        event: {
-            connectOrCreate: {
-                where: { id: 'default-event' },
-                create: { id: 'default-event', name: 'Default Event', date: new Date(), formUrl: 'http://example.com/form' }
-            }
-        }
       },
     });
-    console.log('Admin user created.');
+    // Link admin to event via ticket
+    await prisma.ticket.create({
+      data: {
+        userId: newAdmin.id,
+        eventId: defaultEventId,
+      },
+    });
+    console.log('Admin user created and linked to default event.');
   } else if (!admin.isAdmin) {
     await prisma.user.update({
       where: { email: adminEmail },
