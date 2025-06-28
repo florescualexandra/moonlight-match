@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 interface User {
@@ -15,7 +15,7 @@ interface Match {
   score: number;
 }
 
-export default function AdminMatchingPage() {
+function AdminMatchingContent() {
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId");
   const [users, setUsers] = useState<User[]>([]);
@@ -319,5 +319,13 @@ export default function AdminMatchingPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminMatchingPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminMatchingContent />
+    </Suspense>
   );
 }
