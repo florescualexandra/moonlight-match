@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+import CheckoutForm from './CheckoutForm';
 
 interface Event {
   id: string;
@@ -19,6 +21,9 @@ export default function EventsPage() {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [purchasedEvents, setPurchasedEvents] = useState<string[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   useEffect(() => {
     fetchEvents();
@@ -69,20 +74,16 @@ export default function EventsPage() {
       setError('Please log in to purchase tickets');
       return;
     }
-
     try {
       setPurchasing(event.id);
       setError('');
-
       // Create payment intent
       const res = await fetch('/api/tickets/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, eventId: event.id }),
       });
-
       const data = await res.json();
-      
       if (!res.ok) {
         if (res.status === 409) {
           setPurchasedEvents(prev => [...prev, event.id]);
@@ -90,30 +91,12 @@ export default function EventsPage() {
         } else {
           setError(data.error || 'Failed to process ticket purchase');
         }
+        setPurchasing(null);
         return;
       }
-
-      // Initialize Stripe
-      const stripe = await stripePromise;
-      if (!stripe) {
-        setError('Payment service not available');
-        return;
-      }
-
-      // Confirm payment
-      const { error: stripeError } = await stripe.confirmPayment({
-        clientSecret: data.clientSecret,
-        confirmParams: {
-          return_url: `${window.location.origin}/events?success=true&eventId=${event.id}`,
-        },
-      });
-
-      if (stripeError) {
-        setError(stripeError.message || 'Payment failed');
-      } else {
-        setPurchasedEvents(prev => [...prev, event.id]);
-      }
-
+      setPaymentClientSecret(data.clientSecret);
+      setSelectedEvent(event);
+      setShowPayment(true);
     } catch (err) {
       setError('Payment processing failed. Please try again.');
       console.error('Payment error:', err);
@@ -151,6 +134,32 @@ export default function EventsPage() {
         <div className="max-w-6xl mx-auto mb-8">
           <div className="bg-red-500 text-white p-4 rounded-lg text-center">
             {error}
+          </div>
+        </div>
+      )}
+
+      {/* Payment Modal or Inline */}
+      {showPayment && paymentClientSecret && selectedEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full relative">
+            <button
+              className="absolute top-4 right-4 text-[#D4AF37] text-2xl font-bold hover:text-[#181c24]"
+              onClick={() => { setShowPayment(false); setPaymentClientSecret(null); setSelectedEvent(null); }}
+            >
+              &times;
+            </button>
+            <h2 className="text-2xl font-serif font-bold text-[#181c24] mb-4 text-center">Buy Ticket for {selectedEvent.name}</h2>
+            <Elements stripe={stripePromise} options={{ clientSecret: paymentClientSecret }}>
+              <CheckoutForm
+                onSuccess={() => {
+                  setShowPayment(false);
+                  setPaymentClientSecret(null);
+                  setSelectedEvent(null);
+                  setPurchasedEvents(prev => [...prev, selectedEvent.id]);
+                }}
+                onError={err => setError(err.message || 'Payment failed.')}
+              />
+            </Elements>
           </div>
         </div>
       )}
