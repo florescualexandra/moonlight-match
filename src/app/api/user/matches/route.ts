@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { prisma } from "../../../../lib/prisma";
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 function getDescriptiveCommonality(question: string, answer: string): string {
     const qLower = question.toLowerCase();
@@ -34,7 +36,11 @@ export async function GET(request: Request) {
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
-        event: true,
+        tickets: {
+          include: {
+            event: true,
+          },
+        },
       },
     });
 
@@ -52,7 +58,7 @@ export async function GET(request: Request) {
           select: {
             id: true,
             name: true,
-            image: true, // This line is crucial
+            image: true,
             formResponse: true,
           },
         },
@@ -81,7 +87,10 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json({ matches: processedMatches, event: user.event });
+    // Get the first event from user's tickets
+    const event = user.tickets[0]?.event || null;
+
+    return NextResponse.json({ matches: processedMatches, event });
   } catch (error) {
     console.error('Error fetching matches:', error);
     return NextResponse.json(
