@@ -1,11 +1,10 @@
 import { google } from 'googleapis';
 import { JWT } from 'google-auth-library';
-import fs from 'fs';
-import path from 'path';
+// import fs from 'fs';
+// import path from 'path';
 
-// Load service account credentials
-const serviceAccountPath = path.join(process.cwd(), 'refreshing-park-454420-u2-55ad31703fbb.json');
-const serviceAccountKey = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+// Load service account credentials from environment variable
+const serviceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON!);
 
 // Create JWT client
 const jwtClient = new JWT({
