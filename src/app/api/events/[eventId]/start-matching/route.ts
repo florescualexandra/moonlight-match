@@ -12,6 +12,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Event ID is required.' }, { status: 400 });
     }
 
+    let userIds: string[] | undefined = undefined;
+    try {
+        const body = await req.json().catch(() => undefined);
+        if (body && Array.isArray(body.userIds)) {
+            userIds = body.userIds;
+        }
+    } catch {}
+
     try {
         // 1. Set event state to "matching in progress"
         await prisma.event.update({
@@ -19,14 +27,15 @@ export async function POST(req: NextRequest) {
             data: { isMatching: true, isMatchingComplete: false },
         });
 
-        // 2. Fetch all users for the event (users with tickets for this event)
+        // 2. Fetch users for the event (filtered if userIds provided)
         const users = await prisma.user.findMany({
             where: {
                 tickets: {
                     some: {
                         eventId: eventId
                     }
-                }
+                },
+                ...(userIds ? { id: { in: userIds } } : {})
             },
         });
 

@@ -27,25 +27,32 @@ export async function POST(req: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
 
+    console.log('Received Stripe event:', event.type, JSON.stringify(event.data.object));
+
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      
+      console.log('PaymentIntent metadata:', paymentIntent.metadata);
       // Check if this is a ticket purchase
       if (paymentIntent.metadata?.type === 'event_ticket') {
         const { userId, eventId } = paymentIntent.metadata;
-        
-        // Prevent duplicate tickets
-        const existingTicket = await prisma.ticket.findFirst({
-          where: { userId, eventId }
-        });
-        if (!existingTicket) {
-          await prisma.ticket.create({
-            data: { userId, eventId }
-          });
-          console.log(`Ticket created for user ${userId} and event ${eventId}`);
+        if (!userId || !eventId) {
+          console.error('Missing userId or eventId in paymentIntent metadata');
         } else {
-          console.log(`Ticket already exists for user ${userId} and event ${eventId}`);
+          // Prevent duplicate tickets
+          const existingTicket = await prisma.ticket.findFirst({
+            where: { userId, eventId }
+          });
+          if (!existingTicket) {
+            await prisma.ticket.create({
+              data: { userId, eventId }
+            });
+            console.log(`Ticket created for user ${userId} and event ${eventId}`);
+          } else {
+            console.log(`Ticket already exists for user ${userId} and event ${eventId}`);
+          }
         }
+      } else {
+        console.log('payment_intent.succeeded does not have type=event_ticket');
       }
     }
 

@@ -26,6 +26,25 @@ function cosineSimilarity(vecA: number[], vecB: number[]): number {
   return dotProduct / (magnitudeA * magnitudeB);
 }
 
+// Jaccard similarity for multi-select fields
+function jaccard(a: string, b: string): number {
+  if (!a || !b) return 0;
+  const setA = new Set(a.split(',').map(x => x.trim().toLowerCase()).filter(Boolean));
+  const setB = new Set(b.split(',').map(x => x.trim().toLowerCase()).filter(Boolean));
+  const intersection = new Set([...setA].filter(x => setB.has(x)));
+  const union = new Set([...setA, ...setB]);
+  if (union.size === 0) return 0;
+  return intersection.size / union.size;
+}
+
+// Numeric similarity (e.g., age, height)
+function numericSimilarity(a: string, b: string, maxDiff = 10): number {
+  const numA = parseFloat(a);
+  const numB = parseFloat(b);
+  if (isNaN(numA) || isNaN(numB)) return 0.5;
+  return 1 - Math.min(Math.abs(numA - numB) / maxDiff, 1);
+}
+
 // Main function to calculate compatibility between two users
 export async function calculateCompatibility(userA: any, userB: any): Promise<number> {
   const responsesA = userA.formResponse || {};
@@ -36,91 +55,154 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
 
   // --- Define Weights for each question ---
   const weights: { [key: string]: number } = {
-    'Hobbies': 1.5,
-    'Favorite Music Genre': 1.2,
-    'Preferred Movie/TV Genre': 1.2,
-    'Vacation Type': 1.0,
-    'Deal Breakers': 2.0, // High importance
-    'Vices': 1.5,
+    hobbies: 1.5,
+    music: 1.2,
+    movies: 1.2,
+    vacation: 1.0,
+    vices: 1.0,
+    dealBreakers: 2.0,
+    age: 1.2,
+    gender: 1.2,
+    activity: 1.0,
+    pet: 0.8,
+    child: 0.8,
+    height: 0.8,
   };
 
-  // --- Calculate similarity for different fields ---
+  // --- Map your real form keys ---
+  const keys = {
+    hobbies: 'What are your main hobbies or interests? (Select all that apply)',
+    music: 'What is your favorite music genre? (Select all that apply)',
+    movies: 'What type of movie or TV show do you prefer? (Select all that apply)',
+    vacation: 'Which type of vacation do you prefer? (Select all that apply)',
+    vices: 'Which of the following vices would you say you have? (Select all that apply):',
+    dealBreakers: 'Which of these traits would be deal breakers for you? (Select all that apply)',
+    age: 'How old are you?',
+    gender: 'What is your gender?',
+    partnerGender: 'Which gender do you prefer for your ideal partner? (Select all that apply)',
+    activity: 'How often do you engage in physical activity?',
+    pet: 'How important is it that your partner is pet-friendly?',
+    child: 'How important is it that your partner is child-friendly?',
+    height: 'How tall are you?',
+    ageRange: 'What age range do you prefer?',
+  };
 
-  // 1. Hobbies (Text-based, comma-separated)
-  if (responsesA['Hobbies'] && responsesB['Hobbies']) {
-    const hobbiesA = await getEmbedding(String(responsesA['Hobbies']));
-    const hobbiesB = await getEmbedding(String(responsesB['Hobbies']));
-    const score = cosineSimilarity(hobbiesA, hobbiesB);
-    totalScore += score * weights['Hobbies'];
-    totalWeight += weights['Hobbies'];
+  // 1. Hobbies (Jaccard)
+  if (responsesA[keys.hobbies] && responsesB[keys.hobbies]) {
+    const score = jaccard(responsesA[keys.hobbies], responsesB[keys.hobbies]);
+    totalScore += score * weights.hobbies;
+    totalWeight += weights.hobbies;
   }
-  
-  // 2. Favorite Music Genre (Text-based, comma-separated)
-  if (responsesA['Favorite Music Genre'] && responsesB['Favorite Music Genre']) {
-    const musicA = await getEmbedding(String(responsesA['Favorite Music Genre']));
-    const musicB = await getEmbedding(String(responsesB['Favorite Music Genre']));
-    const score = cosineSimilarity(musicA, musicB);
-    totalScore += score * weights['Favorite Music Genre'];
-    totalWeight += weights['Favorite Music Genre'];
+  // 2. Music (Jaccard)
+  if (responsesA[keys.music] && responsesB[keys.music]) {
+    const score = jaccard(responsesA[keys.music], responsesB[keys.music]);
+    totalScore += score * weights.music;
+    totalWeight += weights.music;
   }
-  
-  // 3. Movie/TV Genre (Text-based, comma-separated)
-  if (responsesA['Preferred Movie/TV Genre'] && responsesB['Preferred Movie/TV Genre']) {
-    const movieA = await getEmbedding(String(responsesA['Preferred Movie/TV Genre']));
-    const movieB = await getEmbedding(String(responsesB['Preferred Movie/TV Genre']));
-    const score = cosineSimilarity(movieA, movieB);
-    totalScore += score * weights['Preferred Movie/TV Genre'];
-    totalWeight += weights['Preferred Movie/TV Genre'];
+  // 3. Movies (Jaccard)
+  if (responsesA[keys.movies] && responsesB[keys.movies]) {
+    const score = jaccard(responsesA[keys.movies], responsesB[keys.movies]);
+    totalScore += score * weights.movies;
+    totalWeight += weights.movies;
   }
+  // 4. Vacation (Jaccard)
+  if (responsesA[keys.vacation] && responsesB[keys.vacation]) {
+    const score = jaccard(responsesA[keys.vacation], responsesB[keys.vacation]);
+    totalScore += score * weights.vacation;
+    totalWeight += weights.vacation;
+  }
+  // 5. Vices (Jaccard, but penalize for deal breakers below)
+  if (responsesA[keys.vices] && responsesB[keys.vices]) {
+    const score = jaccard(responsesA[keys.vices], responsesB[keys.vices]);
+    totalScore += score * weights.vices;
+    totalWeight += weights.vices;
+  }
+  // 6. Deal Breakers (penalty if partner's vices match my deal breakers)
+  if (responsesA[keys.dealBreakers] && responsesB[keys.vices]) {
+    const dealBreakersA = responsesA[keys.dealBreakers].toLowerCase();
+    const vicesB = responsesB[keys.vices].toLowerCase();
+    if (dealBreakersA && vicesB && dealBreakersA.split(',').some((d: string) => vicesB.includes(d.trim()))) {
+      totalScore -= weights.dealBreakers;
+    }
+  }
+  if (responsesB[keys.dealBreakers] && responsesA[keys.vices]) {
+    const dealBreakersB = responsesB[keys.dealBreakers].toLowerCase();
+    const vicesA = responsesA[keys.vices].toLowerCase();
+    if (dealBreakersB && vicesA && dealBreakersB.split(',').some((d: string) => vicesA.includes(d.trim()))) {
+      totalScore -= weights.dealBreakers;
+    }
+  }
+  totalWeight += weights.dealBreakers * 2;
 
-  // 4. Vacation Type (Text-based, comma-separated)
-  if (responsesA['Vacation Type'] && responsesB['Vacation Type']) {
-      const vacationA = await getEmbedding(String(responsesA['Vacation Type']));
-      const vacationB = await getEmbedding(String(responsesB['Vacation Type']));
-      const score = cosineSimilarity(vacationA, vacationB);
-      totalScore += score * weights['Vacation Type'];
-      totalWeight += weights['Vacation Type'];
+  // 7. Age (numeric similarity, prefer close ages)
+  if (responsesA[keys.age] && responsesB[keys.age]) {
+    const score = numericSimilarity(responsesA[keys.age], responsesB[keys.age], 10);
+    totalScore += score * weights.age;
+    totalWeight += weights.age;
   }
-  
-  // 5. Vices (Categorical, check for overlap)
-  if (responsesA['Vices'] && responsesB['Vices']) {
-    const vicesA = String(responsesA['Vices']).split(',').map(v => v.trim());
-    const vicesB = String(responsesB['Vices']).split(',').map(v => v.trim());
-    const commonVices = vicesA.filter(v => vicesB.includes(v));
-    // This is a simple score: 1 if perfect match, 0.5 if some overlap, 0 if none
-    let score = 0;
-    if (vicesA.sort().join(',') === vicesB.sort().join(',')) {
-        score = 1;
-    } else if (commonVices.length > 0) {
-        score = 0.5;
+  // 8. Height (numeric similarity, prefer close heights)
+  if (responsesA[keys.height] && responsesB[keys.height]) {
+    // Try to extract a number from height (e.g., "185 - 190 cm" -> 187.5)
+    function parseHeight(h: string) {
+      const match = h.match(/(\d+)[^\d]+(\d+)/);
+      if (match) return (parseInt(match[1]) + parseInt(match[2])) / 2;
+      const num = parseInt(h);
+      return isNaN(num) ? undefined : num;
     }
-    totalScore += score * weights['Vices'];
-    totalWeight += weights['Vices'];
-  }
-  
-  // 6. Deal Breakers (Crucial Check - negative score)
-  if (responsesA['Deal Breakers'] && responsesB['Vices']) {
-    const dealBreakersA = String(responsesA['Deal Breakers']).split(',').map(d => d.trim().toLowerCase());
-    const vicesB = String(responsesB['Vices']).split(',').map(v => v.trim().toLowerCase());
-    if (vicesB.some(vice => dealBreakersA.includes(vice))) {
-      totalScore -= weights['Deal Breakers']; // Apply a penalty
+    const hA = parseHeight(responsesA[keys.height]);
+    const hB = parseHeight(responsesB[keys.height]);
+    if (hA && hB) {
+      const score = 1 - Math.min(Math.abs(hA - hB) / 20, 1); // 20cm tolerance
+      totalScore += score * weights.height;
+      totalWeight += weights.height;
     }
   }
-  if (responsesB['Deal Breakers'] && responsesA['Vices']) {
-    const dealBreakersB = String(responsesB['Deal Breakers']).split(',').map(d => d.trim().toLowerCase());
-    const vicesA = String(responsesA['Vices']).split(',').map(v => v.trim().toLowerCase());
-    if (vicesA.some(vice => dealBreakersB.includes(vice))) {
-      totalScore -= weights['Deal Breakers']; // Apply a penalty
+  // 9. Gender preference (must match)
+  if (responsesA[keys.partnerGender] && responsesB[keys.gender]) {
+    const wants = responsesA[keys.partnerGender].toLowerCase();
+    const isB = responsesB[keys.gender].toLowerCase();
+    if (wants.includes(isB)) {
+      totalScore += weights.gender;
     }
+    totalWeight += weights.gender;
   }
-  totalWeight += weights['Deal Breakers'] * 2; // Account for two-way check
+  if (responsesB[keys.partnerGender] && responsesA[keys.gender]) {
+    const wants = responsesB[keys.partnerGender].toLowerCase();
+    const isA = responsesA[keys.gender].toLowerCase();
+    if (wants.includes(isA)) {
+      totalScore += weights.gender;
+    }
+    totalWeight += weights.gender;
+  }
+  // 10. Activity level (exact match or close)
+  if (responsesA[keys.activity] && responsesB[keys.activity]) {
+    const a = responsesA[keys.activity].toLowerCase();
+    const b = responsesB[keys.activity].toLowerCase();
+    if (a === b) {
+      totalScore += weights.activity;
+    } else if (a.includes('moderate') && b.includes('moderate')) {
+      totalScore += weights.activity * 0.7;
+    }
+    totalWeight += weights.activity;
+  }
+  // 11. Pet/child friendliness (exact match)
+  if (responsesA[keys.pet] && responsesB[keys.pet]) {
+    if (responsesA[keys.pet] === responsesB[keys.pet]) {
+      totalScore += weights.pet;
+    }
+    totalWeight += weights.pet;
+  }
+  if (responsesA[keys.child] && responsesB[keys.child]) {
+    if (responsesA[keys.child] === responsesB[keys.child]) {
+      totalScore += weights.child;
+    }
+    totalWeight += weights.child;
+  }
 
   // --- Final Score Calculation ---
   if (totalWeight === 0) {
-    return 0; // Cannot calculate score if no common fields are weighted
+    return 0;
   }
-  
-  const finalScore = (totalScore / totalWeight);
-  // Normalize score to be between 0 and 1, clipping any negative results from deal-breakers
+  const finalScore = totalScore / totalWeight;
   return Math.max(0, Math.min(1, finalScore));
 } 

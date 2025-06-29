@@ -19,11 +19,14 @@ export default function EventsPage() {
   const [error, setError] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [matchingStatus, setMatchingStatus] = useState<Record<string, string>>({});
+  const [fetchStatus, setFetchStatus] = useState<Record<string, string>>({});
+  const [spreadsheetIds, setSpreadsheetIds] = useState<Record<string, string>>({});
   const [newEvent, setNewEvent] = useState({
     name: "",
     date: "",
     formUrl: ""
   });
+  const [fetchedUsers, setFetchedUsers] = useState<Record<string, {id: string, name: string, email: string}[]>>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -116,8 +119,12 @@ export default function EventsPage() {
   const startMatching = async (eventId: string) => {
     setMatchingStatus(prev => ({ ...prev, [eventId]: 'Starting...' }));
     try {
+      // If we have fetched users for this event, send their IDs
+      const userIds = fetchedUsers[eventId]?.map(u => u.id).filter(Boolean);
       const res = await fetch(`/api/events/${eventId}/start-matching`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: userIds && userIds.length > 0 ? JSON.stringify({ userIds }) : undefined,
       });
       const data = await res.json();
       if (res.ok) {
@@ -150,6 +157,43 @@ export default function EventsPage() {
       }
     } catch (err) {
       setError("Failed to generate QR code");
+    }
+  };
+
+  const fetchFormResponses = async (eventId: string) => {
+    const spreadsheetId = spreadsheetIds[eventId];
+    if (!spreadsheetId) {
+      setFetchStatus(prev => ({ ...prev, [eventId]: 'Error: Please enter spreadsheet ID' }));
+      return;
+    }
+
+    setFetchStatus(prev => ({ ...prev, [eventId]: 'Fetching...' }));
+    try {
+      const res = await fetch("/api/google-forms/fetch-responses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          spreadsheetId,
+          eventId 
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        setFetchStatus(prev => ({ 
+          ...prev, 
+          [eventId]: `Success: ${data.processedUsers.length} users processed` 
+        }));
+        setFetchedUsers(prev => ({
+          ...prev,
+          [eventId]: data.processedUsers.map((u: any) => ({ id: u.id, name: u.name, email: u.email }))
+        }));
+      } else {
+        throw new Error(data.error || 'Failed to fetch form responses');
+      }
+    } catch (err: any) {
+      setFetchStatus(prev => ({ ...prev, [eventId]: `Error: ${err.message}` }));
     }
   };
 
@@ -223,6 +267,55 @@ export default function EventsPage() {
                     </button>
                   </div>
                 </div>
+                
+                {/* Google Forms Integration */}
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="text-lg font-bold text-[#181c24] mb-3">Google Forms Integration</h3>
+                  <div className="flex gap-4 items-end">
+                    <div className="flex-1">
+                      <label className="block text-[#23283a] text-sm font-bold mb-2">
+                        Spreadsheet ID
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Enter Google Sheets ID (from URL)"
+                        value={spreadsheetIds[event.id] || ''}
+                        onChange={(e) => setSpreadsheetIds(prev => ({ 
+                          ...prev, 
+                          [event.id]: e.target.value 
+                        }))}
+                        className="w-full px-4 py-2 rounded-lg border-2 border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[#D4AF37] text-[#181c24]"
+                      />
+                    </div>
+                    <button
+                      onClick={() => fetchFormResponses(event.id)}
+                      disabled={!spreadsheetIds[event.id] || fetchStatus[event.id] === 'Fetching...'}
+                      className="px-6 py-2 rounded-lg bg-blue-500 text-white font-bold hover:bg-blue-600 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {fetchStatus[event.id] === 'Fetching...' ? 'Fetching...' : 'Fetch Responses'}
+                    </button>
+                  </div>
+                  {fetchStatus[event.id] && (
+                    <div className={`mt-2 text-sm ${
+                      fetchStatus[event.id].startsWith('Error') ? 'text-red-600' : 
+                      fetchStatus[event.id].startsWith('Success') ? 'text-green-600' : 
+                      'text-blue-600'
+                    }`}>
+                      {fetchStatus[event.id]}
+                    </div>
+                  )}
+                  {fetchedUsers[event.id] && fetchedUsers[event.id].length > 0 && (
+                    <div className="mt-2">
+                      <h4 className="font-bold">Fetched Names:</h4>
+                      <ul className="list-disc ml-6">
+                        {fetchedUsers[event.id].map((user, idx) => (
+                          <li key={idx}>{user.name} ({user.email})</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
                 {event.qrCode && (
                   <div className="mt-4 flex justify-center">
                     <img src={event.qrCode} alt="Event QR Code" className="w-48 h-48" />

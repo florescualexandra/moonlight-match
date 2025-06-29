@@ -18,6 +18,7 @@ model User {
   image         String?
   description   String?
   formResponse  Json?
+  hasCompletedForm Boolean @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   dataRetention Boolean   @default(false)
