@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Stripe Checkout Session
+    console.log('Creating Stripe Checkout Session with:', { eventId, userId });
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
       cancel_url: 'https://your-app.com/payment-cancel',
       metadata: { eventId, userId, type: 'event_ticket' },
     });
+    console.log('Created Stripe Checkout Session:', session.id, 'with metadata:', session.metadata);
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
