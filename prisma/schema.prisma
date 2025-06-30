@@ -34,6 +34,7 @@ model Event {
   name               String
   date               DateTime
   formUrl            String
+  code               String    @unique
   isMatching         Boolean   @default(false)
   isMatchingComplete Boolean   @default(false)
   matchesSent        Boolean   @default(false)

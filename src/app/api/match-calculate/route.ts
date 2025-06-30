@@ -36,7 +36,8 @@ export async function POST(req: NextRequest) {
     where: {
       tickets: {
         some: { eventId }
-      }
+      },
+      hasCompletedForm: true
     }
   });
 

@@ -59,34 +59,42 @@ export async function GET(request: Request) {
 // POST to create a new chat
 export async function POST(request: Request) {
     try {
-        const { matchId } = await request.json();
+        const { matchId, userId } = await request.json();
 
-        if (!matchId) {
-            return NextResponse.json({ error: 'Match ID is required' }, { status: 400 });
+        if (!matchId || !userId) {
+            return NextResponse.json({ error: 'Match ID and userId are required' }, { status: 400 });
         }
         
         // Check if a chat for this match already exists
         const existingChat = await prisma.chat.findUnique({
             where: { matchId },
         });
-
         if (existingChat) {
             return NextResponse.json({ chat: existingChat });
         }
         
-        // Verify the match exists before creating a chat for it
+        // Verify the match exists and is revealed for the requesting user
         const match = await prisma.match.findUnique({ where: { id: matchId }});
         if (!match) {
             return NextResponse.json({ error: 'Match not found' }, { status: 404 });
         }
-
+        // Only allow chat creation if the requesting user is userId or matchedUserId and the match is revealed for them
+        let isRevealed = false;
+        if (match.userId === userId && (match.isInitiallyRevealed || match.isPaidReveal)) {
+            isRevealed = true;
+        }
+        if (match.matchedUserId === userId && (match.isInitiallyRevealed || match.isPaidReveal)) {
+            isRevealed = true;
+        }
+        if (!isRevealed) {
+            return NextResponse.json({ error: 'You cannot start a chat with a hidden match.' }, { status: 403 });
+        }
         // Create new chat
         const newChat = await prisma.chat.create({
             data: {
                 matchId: matchId,
             },
         });
-
         return NextResponse.json({ chat: newChat }, { status: 201 });
     } catch (error) {
         console.error('Error creating chat:', error);
