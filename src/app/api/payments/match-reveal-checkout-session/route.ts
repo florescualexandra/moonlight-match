@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       mode: 'payment',
       success_url: 'https://moonlightmatch.app/payment-success',
       cancel_url: 'https://moonlightmatch.app/payment-cancel',
+      metadata: { matchId, userId, type: 'match_reveal' },
       payment_intent_data: {
         metadata: { matchId, userId, type: 'match_reveal' }
       },
