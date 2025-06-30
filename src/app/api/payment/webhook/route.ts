@@ -27,40 +27,47 @@ export async function POST(req: NextRequest) {
     const event = stripe.webhooks.constructEvent(
       payload,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_MATCH_REVEAL_WEBHOOK_SECRET!
     );
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
+      console.log('Webhook received checkout.session.completed');
+      console.log('Session:', JSON.stringify(session, null, 2));
       const userId = session.metadata?.userId;
+      const amount = session.amount_total;
+      const currency = session.currency;
+      const type = session.metadata?.type;
+      console.log('Metadata:', session.metadata);
+      console.log('userId:', userId, 'amount:', amount, 'currency:', currency, 'type:', type);
 
-      if (userId) {
-        // Find the top 2 unrevealed matches for the user
-        const matchesToReveal = await prisma.match.findMany({
+      if (userId && amount === 500 && currency === 'ron' && type === 'match_reveal') {
+        const freeMatches = 3;
+        const paidRevealedCount = await prisma.match.count({
           where: {
             userId: userId,
-            isInitiallyRevealed: false,
-            isPaidReveal: false,
-          },
-          orderBy: {
-            score: 'desc'
-          },
-          take: 2
-        });
-
-        // Mark these matches as revealed via payment
-        await prisma.match.updateMany({
-          where: {
-            id: {
-              in: matchesToReveal.map(m => m.id)
-            }
-          },
-          data: {
-            isPaidReveal: true
+            isPaidReveal: true,
           }
         });
-        
-        console.log(`Revealed ${matchesToReveal.length} paid matches for user ${userId}`);
+        console.log('paidRevealedCount:', paidRevealedCount);
+        const matches = await prisma.match.findMany({
+          where: { userId: userId },
+          orderBy: { score: 'desc' },
+        });
+        console.log('matches:', matches.map(m => ({ id: m.id, isPaidReveal: m.isPaidReveal, score: m.score })));
+        const toReveal = matches[freeMatches + paidRevealedCount];
+        console.log('toReveal:', toReveal);
+        if (toReveal && !toReveal.isPaidReveal) {
+          await prisma.match.update({
+            where: { id: toReveal.id },
+            data: { isPaidReveal: true },
+          });
+          console.log(`Revealed next paid match ${toReveal.id} for user ${userId}`);
+        } else {
+          console.log('No more matches to reveal for user', userId);
+        }
+      } else {
+        console.log('Webhook: Payment does not match criteria for match reveal.');
       }
     }
 

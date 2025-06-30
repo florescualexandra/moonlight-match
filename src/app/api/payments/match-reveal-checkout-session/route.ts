@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../lib/prisma';
+import { prisma } from '../../../../lib/prisma';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Stripe Checkout Session
+    console.log('Creating Stripe Checkout Session for match reveal with:', { matchId, userId });
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
@@ -41,10 +42,13 @@ export async function POST(request: NextRequest) {
         quantity: 1,
       }],
       mode: 'payment',
-      success_url: 'https://your-app.com/payment-success',
-      cancel_url: 'https://your-app.com/payment-cancel',
-      metadata: { matchId, userId, type: 'match_reveal' },
+      success_url: 'https://moonlightmatch.app/payment-success',
+      cancel_url: 'https://moonlightmatch.app/payment-cancel',
+      payment_intent_data: {
+        metadata: { matchId, userId, type: 'match_reveal' }
+      },
     });
+    console.log('Created Stripe Checkout Session for match reveal:', session.id, 'with metadata:', session.metadata);
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

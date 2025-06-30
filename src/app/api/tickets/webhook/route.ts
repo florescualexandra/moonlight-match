@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const event = stripe.webhooks.constructEvent(
       payload,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_TICKET_WEBHOOK_SECRET!
     );
 
     console.log('Received Stripe event:', event.type, JSON.stringify(event.data.object));
