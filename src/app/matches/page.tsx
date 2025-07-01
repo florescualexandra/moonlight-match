@@ -32,15 +32,22 @@ const MatchCard = ({ match, onChatClick }: { match: Match, onChatClick: (matchId
     />
     <h3 className="text-2xl font-bold text-[#D4AF37]">{match.matchedUser.name || 'Anonymous'}</h3>
     <p className="text-white/80 mb-4">Compatibility Score: {Math.round(match.score * 100)}%</p>
-    {match.commonalities && match.commonalities.length > 0 && (
-        <div className="text-left w-full mb-4">
-            <p className="text-white/90 font-semibold">You both:</p>
-            <ul className="list-disc list-inside text-white/80 text-sm">
-                {match.commonalities.map(item => (
-                    <li key={item}>{item}</li>
-                ))}
-            </ul>
-        </div>
+    {match.commonalities && match.commonalities.filter(item => item && item.trim() !== '').length > 0 ? (
+      <div className="text-left w-full mb-4">
+        <p className="text-white/90 font-semibold mb-1">You both:</p>
+        <ul className="list-disc list-inside text-white/80 text-sm ml-4">
+          {match.commonalities
+            .filter(item => item && item.trim() !== '')
+            .map((item, idx) => (
+              <li key={idx}>{item}</li>
+            ))}
+        </ul>
+      </div>
+    ) : (
+      <div className="text-left w-full mb-4">
+        <p className="text-white/90 font-semibold mb-1">You both:</p>
+        <span className="text-white/60 text-sm ml-4">No strong similarities found.</span>
+      </div>
     )}
     <div className="flex-grow"></div>
     <button 
