@@ -83,7 +83,7 @@ export async function GET(request: Request) {
       return {
         ...match,
         isRevealed: match.isInitiallyRevealed || match.isPaidReveal || index < 3,
-        commonalities: commonalities.slice(0, 3),
+        commonalities: commonalities,
       };
     });
 
