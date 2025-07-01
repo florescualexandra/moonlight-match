@@ -11,50 +11,51 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String
-  name          String?
-  image         String?
-  description   String?
-  formResponse  Json?
-  hasCompletedForm Boolean @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  dataRetention Boolean   @default(false)
-  isAdmin       Boolean   @default(false)
-  matches       Match[]   @relation("UserMatches")
-  matchedWith   Match[]   @relation("MatchedWith")
-  sentMessages  Message[]
-  tickets       Ticket[]
+  id               String          @id @default(cuid())
+  email            String          @unique
+  password         String
+  name             String?
+  image            String?
+  description      String?
+  formResponse     Json?
+  hasCompletedForm Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  dataRetention    Boolean         @default(false)
+  isAdmin          Boolean         @default(false)
+  matches          Match[]         @relation("UserMatches")
+  matchedWith      Match[]         @relation("MatchedWith")
+  sentMessages     Message[]
+  tickets          Ticket[]
+  stripePayments   StripePayment[]
 }
 
 model Event {
-  id                 String    @id @default(cuid())
+  id                 String   @id @default(cuid())
   name               String
   date               DateTime
   formUrl            String
-  isMatching         Boolean   @default(false)
-  isMatchingComplete Boolean   @default(false)
-  matchesSent        Boolean   @default(false)
+  isMatching         Boolean  @default(false)
+  isMatchingComplete Boolean  @default(false)
+  matchesSent        Boolean  @default(false)
   matches            Match[]
   tickets            Ticket[]
 }
 
 model Match {
-  id                   String    @id @default(cuid())
-  user                 User      @relation("UserMatches", fields: [userId], references: [id])
-  userId               String
-  matchedUser          User      @relation("MatchedWith", fields: [matchedUserId], references: [id])
-  matchedUserId        String
-  score                Float
-  isInitiallyRevealed  Boolean   @default(false)
-  isPaidReveal         Boolean   @default(false)
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-  event                Event     @relation(fields: [eventId], references: [id])
-  eventId              String
-  chat                 Chat?
+  id                  String   @id @default(cuid())
+  user                User     @relation("UserMatches", fields: [userId], references: [id])
+  userId              String
+  matchedUser         User     @relation("MatchedWith", fields: [matchedUserId], references: [id])
+  matchedUserId       String
+  score               Float
+  isInitiallyRevealed Boolean  @default(false)
+  isPaidReveal        Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  event               Event    @relation(fields: [eventId], references: [id])
+  eventId             String
+  chat                Chat?
 
   @@unique([userId, matchedUserId, eventId])
 }
@@ -80,8 +81,8 @@ model Message {
 }
 
 model formResponse {
-  id    String @id @default(uuid())
-  data  Json
+  id   String @id @default(uuid())
+  data Json
   // ... other fields
 }
 
@@ -104,5 +105,5 @@ model StripePayment {
   stripePaymentIntentId String
   createdAt             DateTime @default(now())
 
-  user                  User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
