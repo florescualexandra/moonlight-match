@@ -77,26 +77,19 @@ export default function EventsPage() {
     try {
       setPurchasing(event.id);
       setError('');
-      // Create payment intent
-      const res = await fetch('/api/tickets/purchase', {
+      // Use Stripe Checkout session for ticket purchase
+      const res = await fetch('/api/payments/ticket-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, eventId: event.id }),
+        body: JSON.stringify({ eventId: event.id, userId }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        if (res.status === 409) {
-          setPurchasedEvents(prev => [...prev, event.id]);
-          setError('You already have a ticket for this event');
-        } else {
-          setError(data.error || 'Failed to process ticket purchase');
-        }
+      if (!res.ok || !data.url) {
+        setError(data.error || 'Failed to process ticket purchase');
         setPurchasing(null);
         return;
       }
-      setPaymentClientSecret(data.clientSecret);
-      setSelectedEvent(event);
-      setShowPayment(true);
+      window.location.href = data.url; // Redirect to Stripe Checkout
     } catch (err) {
       setError('Payment processing failed. Please try again.');
       console.error('Payment error:', err);
