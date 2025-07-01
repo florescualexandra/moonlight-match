@@ -42,29 +42,40 @@ export async function POST(req: NextRequest) {
       console.log('userId:', userId, 'amount:', amount, 'currency:', currency, 'type:', type);
 
       if (userId && amount === 500 && currency === 'ron' && type === 'match_reveal') {
-        const freeMatches = 3;
-        const paidRevealedCount = await prisma.match.count({
+        // Idempotency: Only insert if not already present
+        const stripePaymentIntentId = session.payment_intent || session.id;
+        const existingPayment = await prisma.stripePayment.findUnique({
+          where: { stripePaymentIntentId },
+        });
+        if (!existingPayment) {
+          await prisma.stripePayment.create({
+            data: {
+              userId,
+              amount,
+              currency,
+              type,
+              status: 'succeeded',
+              stripePaymentIntentId,
+            },
+          });
+        }
+        // Reveal only the next hidden match (not already revealed) in descending score order
+        const nextHiddenMatch = await prisma.match.findFirst({
           where: {
             userId: userId,
-            isPaidReveal: true,
-          }
-        });
-        console.log('paidRevealedCount:', paidRevealedCount);
-        const matches = await prisma.match.findMany({
-          where: { userId: userId },
+            isInitiallyRevealed: false,
+            isPaidReveal: false,
+          },
           orderBy: { score: 'desc' },
         });
-        console.log('matches:', matches.map(m => ({ id: m.id, isPaidReveal: m.isPaidReveal, score: m.score })));
-        const toReveal = matches[freeMatches + paidRevealedCount];
-        console.log('toReveal:', toReveal);
-        if (toReveal && !toReveal.isPaidReveal) {
+        if (nextHiddenMatch) {
           await prisma.match.update({
-            where: { id: toReveal.id },
+            where: { id: nextHiddenMatch.id },
             data: { isPaidReveal: true },
           });
-          console.log(`Revealed next paid match ${toReveal.id} for user ${userId}`);
+          console.log(`Revealed next hidden match ${nextHiddenMatch.id} for user ${userId}`);
         } else {
-          console.log('No more matches to reveal for user', userId);
+          console.log(`No more hidden matches to reveal for user ${userId}`);
         }
       } else {
         console.log('Webhook: Payment does not match criteria for match reveal.');

@@ -93,3 +93,16 @@ model Ticket {
   eventId   String
   createdAt DateTime @default(now())
 }
+
+model StripePayment {
+  id                    String   @id @default(cuid())
+  userId                String
+  amount                Int
+  currency              String
+  type                  String
+  status                String
+  stripePaymentIntentId String
+  createdAt             DateTime @default(now())
+
+  user                  User     @relation(fields: [userId], references: [id])
+}
