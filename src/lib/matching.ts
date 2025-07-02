@@ -243,26 +243,33 @@ function calculatePersonalityCompatibility(traitsA: any, traitsB: any): number {
 
 // Enhanced compatibility calculation with maximum accuracy
 export async function calculateCompatibility(userA: any, userB: any): Promise<number> {
+  const fields = {
+    hobbies: "What are your main hobbies or interests? (Select all that apply)",
+    music: "What is your favorite music genre? (Select all that apply)",
+    movies: "What type of movie or TV show do you prefer? (Select all that apply)",
+    age: "How old are you?",
+    gender: "What is your gender?",
+    // Add more as needed
+  };
+
   const responsesA = userA.formResponse || {};
   const responsesB = userB.formResponse || {};
 
   let totalScore = 0;
   let totalWeight = 0;
 
-  // Define weights for each field
   const weights = {
     hobbies: 2,
     music: 1.5,
     movies: 1.5,
     age: 2,
     gender: 2,
-    // ...add more as needed
   };
 
-  // Hobbies (Jaccard + fallback)
-  if (responsesA.hobbies && responsesB.hobbies) {
-    const setA = new Set(responsesA.hobbies.split(',').map((x: string) => x.trim().toLowerCase()));
-    const setB = new Set(responsesB.hobbies.split(',').map((x: string) => x.trim().toLowerCase()));
+  // Hobbies
+  if (responsesA[fields.hobbies] && responsesB[fields.hobbies]) {
+    const setA = new Set(responsesA[fields.hobbies].split(',').map((x: string) => x.trim().toLowerCase()));
+    const setB = new Set(responsesB[fields.hobbies].split(',').map((x: string) => x.trim().toLowerCase()));
     const intersection = new Set([...setA].filter(x => setB.has(x)));
     const union = new Set([...setA, ...setB]);
     const score = union.size ? intersection.size / union.size : 0.5;
@@ -271,23 +278,23 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   }
 
   // Music
-  if (responsesA.music && responsesB.music) {
-    const score = responsesA.music === responsesB.music ? 1 : 0.5;
+  if (responsesA[fields.music] && responsesB[fields.music]) {
+    const score = responsesA[fields.music] === responsesB[fields.music] ? 1 : 0.5;
     totalScore += score * weights.music;
     totalWeight += weights.music;
   }
 
   // Movies
-  if (responsesA.movies && responsesB.movies) {
-    const score = responsesA.movies === responsesB.movies ? 1 : 0.5;
+  if (responsesA[fields.movies] && responsesB[fields.movies]) {
+    const score = responsesA[fields.movies] === responsesB[fields.movies] ? 1 : 0.5;
     totalScore += score * weights.movies;
     totalWeight += weights.movies;
   }
 
-  // Age (numeric similarity)
-  if (responsesA.age && responsesB.age) {
-    const ageA = parseInt(responsesA.age);
-    const ageB = parseInt(responsesB.age);
+  // Age
+  if (responsesA[fields.age] && responsesB[fields.age]) {
+    const ageA = parseInt(responsesA[fields.age]);
+    const ageB = parseInt(responsesB[fields.age]);
     if (!isNaN(ageA) && !isNaN(ageB)) {
       const diff = Math.abs(ageA - ageB);
       const score = 1 - Math.min(diff / 10, 1); // 10 years tolerance
@@ -297,18 +304,13 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   }
 
   // Gender
-  if (responsesA.gender && responsesB.gender) {
-    const score = responsesA.gender === responsesB.gender ? 1 : 0.5;
+  if (responsesA[fields.gender] && responsesB[fields.gender]) {
+    const score = responsesA[fields.gender] === responsesB[fields.gender] ? 1 : 0.5;
     totalScore += score * weights.gender;
     totalWeight += weights.gender;
   }
 
-  // ...add more fields as needed
-
-  // If no fields matched, return a neutral score
   if (totalWeight === 0) return 0.5;
-
-  // Normalize to [0, 1]
   return Math.max(0, Math.min(1, totalScore / totalWeight));
 }
 
