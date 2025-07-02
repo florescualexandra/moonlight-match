@@ -78,7 +78,22 @@ export async function POST(req: NextRequest) {
             data: { isMatching: false, isMatchingComplete: true },
         });
 
-        // 7. For testing: retrieve and print the top 3 matches for each user
+        // 7. Reveal top 3 matches for each user
+        for (const user of users) {
+            const topMatches = await prisma.match.findMany({
+                where: { userId: user.id, eventId },
+                orderBy: { score: 'desc' },
+                take: 3,
+            });
+            for (const match of topMatches) {
+                await prisma.match.update({
+                    where: { id: match.id },
+                    data: { isInitiallyRevealed: true },
+                });
+            }
+        }
+
+        // 8. For testing: retrieve and print the top 3 matches for each user
         console.log("\n--- Top 3 Matches Per User ---");
         for (const user of users) {
             const topMatches = await prisma.match.findMany({
