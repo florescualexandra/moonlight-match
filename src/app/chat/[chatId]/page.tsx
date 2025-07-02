@@ -24,6 +24,14 @@ export default function ChatRoomPage() {
   const chatId = params.chatId as string;
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
+  // Defensive check for invalid chatId
+  if (chatId === 'chats') {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/chats';
+    }
+    return <div className="text-center text-red-500 p-10">Invalid chat.</div>;
+  }
+
   useEffect(() => {
     const profileStr = localStorage.getItem('mm_user_profile');
     if (profileStr) {
