@@ -7,9 +7,9 @@ function getUserId(req: NextRequest): string | null {
   return url.searchParams.get('userId');
 }
 
-export async function GET(req: NextRequest, context: { params: { chatId: string } }) {
+export async function GET(req: NextRequest, { params }: { params: { chatId: string } }) {
   const userId = getUserId(req);
-  const { chatId } = context.params;
+  const { chatId } = params;
   if (!userId) {
     return NextResponse.json({ error: 'userId is required' }, { status: 400 });
   }
@@ -34,9 +34,9 @@ export async function GET(req: NextRequest, context: { params: { chatId: string 
   }
 }
 
-export async function POST(req: NextRequest, context: { params: { chatId: string } }) {
+export async function POST(req: NextRequest, { params }: { params: { chatId: string } }) {
   const userId = getUserId(req);
-  const { chatId } = context.params;
+  const { chatId } = params;
   if (!userId) {
     return NextResponse.json({ error: 'userId is required' }, { status: 400 });
   }
