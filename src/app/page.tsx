@@ -17,7 +17,6 @@ export default function Home() {
         </div>
         <div className="flex gap-6 items-center">
           <Link href="/events" className="text-lg font-semibold text-[#D4AF37] hover:text-white transition">Events</Link>
-          <Link href="/chats" className="text-lg font-semibold text-[#D4AF37] hover:text-white transition">My Chats</Link>
           <a href="#features" className="text-lg font-semibold text-[#D4AF37] hover:text-white transition">Features</a>
           <a href="#contact" className="text-lg font-semibold text-[#D4AF37] hover:text-white transition">Contact</a>
         </div>
