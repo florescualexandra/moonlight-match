@@ -264,8 +264,8 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   // Robust parsing helpers
   function parseGender(val: any): string[] {
     if (!val) return [];
-    if (Array.isArray(val)) return val.map((v) => v.toLowerCase().trim());
-    return val.split(',').map((v: string) => v.toLowerCase().trim()).filter(Boolean);
+    if (Array.isArray(val)) return val.map((v) => String(v).toLowerCase().trim());
+    return String(val).split(',').map((v: string) => v.toLowerCase().trim()).filter(Boolean);
   }
   function parseAgeRange(str: string): [number, number] | null {
     if (!str || /no preference/i.test(str)) return null;
@@ -274,15 +274,16 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
     return null;
   }
 
-  // Parse gender and gender preference as arrays
+  // Parse gender and gender preference as arrays (robust)
   const genderPrefA = parseGender(responsesA[fields.partnerGender]);
   const genderA = parseGender(responsesA[fields.gender]);
   const genderPrefB = parseGender(responsesB[fields.partnerGender]);
   const genderB = parseGender(responsesB[fields.gender]);
 
-  // For debug: get emails if available
+  // Extra debug output for gender parsing
   const emailA = responsesA["What is your email address? (the one used for creating the user as well)"] || userA.email || userA.id;
   const emailB = responsesB["What is your email address? (the one used for creating the user as well)"] || userB.email || userB.id;
+  console.log(`[MATCH-DEBUG] ${emailA} genderPref: ${JSON.stringify(genderPrefA)}, gender: ${JSON.stringify(genderA)} | ${emailB} genderPref: ${JSON.stringify(genderPrefB)}, gender: ${JSON.stringify(genderB)}`);
 
   // Gender preference check (still a hard dealbreaker)
   if (
