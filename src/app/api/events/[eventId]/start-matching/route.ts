@@ -58,6 +58,10 @@ export async function POST(req: NextRequest) {
 
                 // 4. Calculate compatibility
                 const score = await calculateCompatibility(userA, userB);
+                if (isNaN(score)) {
+                    console.error('Skipping match creation due to NaN score:', { userA: userA.id, userB: userB.id, eventId });
+                    continue;
+                }
                 console.log(`Match score for ${userA.name} and ${userB.name}: ${score.toFixed(3)}`);
 
                 // 5. Store the match in the database
