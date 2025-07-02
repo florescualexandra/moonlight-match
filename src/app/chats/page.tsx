@@ -75,9 +75,9 @@ export default function ChatsPage() {
       </div>
       <h1 className="text-4xl font-serif font-bold text-[#D4AF37] mb-8 text-center">My Chats</h1>
       <div className="max-w-4xl mx-auto">
-        {chats.length > 0 ? (
+        {chats.filter(chat => chat.chatId !== 'chats').length > 0 ? (
           <div className="space-y-4">
-            {chats.map(chat => (
+            {chats.filter(chat => chat.chatId !== 'chats').map(chat => (
               <ChatListItem key={chat.chatId} chat={chat} />
             ))}
           </div>
