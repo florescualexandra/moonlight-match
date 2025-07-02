@@ -5,6 +5,8 @@ import { pipeline, env } from '@xenova/transformers';
 // Configure transformers to use CPU for better compatibility
 env.allowLocalModels = false;
 env.allowRemoteModels = true;
+// Set cache directory to /tmp for Vercel compatibility
+env.cacheDir = '/tmp';
 
 // Cache for the sentence transformer model
 let sentenceTransformer: any = null;
@@ -103,23 +105,26 @@ function parseHeight(height: string): number | null {
 // Calculate semantic similarity using sentence transformers with caching
 const semanticCache = new Map<string, number>();
 
+function flattenEmbedding(embedding: any): number[] {
+  // If it's a 2D array, flatten to 1D
+  return Array.isArray(embedding[0]) ? embedding[0] : embedding;
+}
+
 async function calculateSemanticSimilarity(textA: string, textB: string): Promise<number> {
   if (!textA || !textB) return 0;
-  
   // Check cache first
   const cacheKey = `${textA.toLowerCase()}|${textB.toLowerCase()}`;
   if (semanticCache.has(cacheKey)) {
     return semanticCache.get(cacheKey)!;
   }
-  
   try {
     const model = await getSentenceTransformer();
     const embeddings = await model([textA, textB]);
-    const similarity = cosineSimilarity(embeddings[0], embeddings[1]);
-    
+    const embA = flattenEmbedding(embeddings[0]);
+    const embB = flattenEmbedding(embeddings[1]);
+    const similarity = cosineSimilarity(embA, embB);
     // Cache the result
     semanticCache.set(cacheKey, similarity);
-    
     // Limit cache size
     if (semanticCache.size > 1000) {
       const firstKey = semanticCache.keys().next().value;
@@ -127,7 +132,6 @@ async function calculateSemanticSimilarity(textA: string, textB: string): Promis
         semanticCache.delete(firstKey);
       }
     }
-    
     return similarity;
   } catch (error) {
     console.error('Error calculating semantic similarity:', error);
