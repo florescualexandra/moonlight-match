@@ -7,7 +7,7 @@ function getUserId(req: NextRequest): string | null {
   return url.searchParams.get('userId');
 }
 
-export async function GET(req: NextRequest, { params }: { params: { chatId: string } }) {
+export async function GET(req: NextRequest, { params }: any) {
   const userId = getUserId(req);
   const { chatId } = params;
   if (!userId) {
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest, { params }: { params: { chatId: stri
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { chatId: string } }) {
+export async function POST(req: NextRequest, { params }: any) {
   const userId = getUserId(req);
   const { chatId } = params;
   if (!userId) {
