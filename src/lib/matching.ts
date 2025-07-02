@@ -280,17 +280,23 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   const genderPrefB = parseGender(responsesB[fields.partnerGender]);
   const genderB = parseGender(responsesB[fields.gender]);
 
+  // For debug: get emails if available
+  const emailA = responsesA["What is your email address? (the one used for creating the user as well)"] || userA.email || userA.id;
+  const emailB = responsesB["What is your email address? (the one used for creating the user as well)"] || userB.email || userB.id;
+
   // Gender preference check (allow 'any', 'all', or empty = no preference)
   if (
     genderPrefA.length && genderB.length &&
     !genderPrefA.some((pref) => genderB.includes(pref) || pref === 'any' || pref === 'all')
   ) {
+    console.log(`[MATCH-DEBUG] Gender dealbreaker: ${emailA} wants ${genderPrefA} but ${emailB} is ${genderB}`);
     return 0;
   }
   if (
     genderPrefB.length && genderA.length &&
     !genderPrefB.some((pref) => genderA.includes(pref) || pref === 'any' || pref === 'all')
   ) {
+    console.log(`[MATCH-DEBUG] Gender dealbreaker: ${emailB} wants ${genderPrefB} but ${emailA} is ${genderA}`);
     return 0;
   }
 
@@ -304,11 +310,13 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   const gB = genderB[0] || "";
   if (partnerPhysicalA.includes("tall")) {
     if ((gB === "male" && (heightB === null || heightB < 175)) || (gB === "female" && (heightB === null || heightB < 170))) {
+      console.log(`[MATCH-DEBUG] Height dealbreaker: ${emailA} wants tall, but ${emailB} is ${heightB}cm (${gB})`);
       return 0;
     }
   }
   if (partnerPhysicalB.includes("tall")) {
     if ((gA === "male" && (heightA === null || heightA < 175)) || (gA === "female" && (heightA === null || heightA < 170))) {
+      console.log(`[MATCH-DEBUG] Height dealbreaker: ${emailB} wants tall, but ${emailA} is ${heightA}cm (${gA})`);
       return 0;
     }
   }
@@ -319,9 +327,11 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   const agePrefA = parseAgeRange(responsesA[fields.agePref] || "");
   const agePrefB = parseAgeRange(responsesB[fields.agePref] || "");
   if (agePrefA && (isNaN(ageB) || ageB < agePrefA[0] || ageB > agePrefA[1])) {
+    console.log(`[MATCH-DEBUG] Age dealbreaker: ${emailA} wants ${agePrefA[0]}–${agePrefA[1]}, but ${emailB} is ${ageB}`);
     return 0;
   }
   if (agePrefB && (isNaN(ageA) || ageA < agePrefB[0] || ageA > agePrefB[1])) {
+    console.log(`[MATCH-DEBUG] Age dealbreaker: ${emailB} wants ${agePrefB[0]}–${agePrefB[1]}, but ${emailA} is ${ageA}`);
     return 0;
   }
 
@@ -336,9 +346,11 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   const dealBreakersB = toArray(responsesB[fields.dealBreakers]);
   const vicesA = toArray(responsesA[fields.vices]);
   if (dealBreakersA.some((db) => vicesB.some((v) => v.includes(db) || db.includes(v)))) {
+    console.log(`[MATCH-DEBUG] Dealbreaker: ${emailA} cannot accept ${dealBreakersA} but ${emailB} has ${vicesB}`);
     return 0;
   }
   if (dealBreakersB.some((db) => vicesA.some((v) => v.includes(db) || db.includes(v)))) {
+    console.log(`[MATCH-DEBUG] Dealbreaker: ${emailB} cannot accept ${dealBreakersB} but ${emailA} has ${vicesA}`);
     return 0;
   }
 
