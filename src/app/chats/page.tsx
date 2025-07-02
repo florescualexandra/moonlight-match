@@ -9,10 +9,11 @@ interface ChatItem {
   otherUserImage: string | null;
   lastMessage: string;
   lastMessageTimestamp: string;
+  matchId: string;
 }
 
 const ChatListItem = ({ chat }: { chat: ChatItem }) => (
-  <Link href={`/chat/${chat.chatId}`} className="block w-full">
+  <Link href={{ pathname: `/chat/${chat.chatId}`, query: { matchId: chat.matchId } }} className="block w-full">
     <div className="flex items-center p-4 bg-white/10 rounded-2xl shadow-lg backdrop-blur-sm border border-white/20 hover:bg-white/20 transition duration-300">
       <img
         src={chat.otherUserImage || '/default-avatar.png'}
@@ -37,8 +38,14 @@ export default function ChatsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const email = localStorage.getItem('mm_email');
-    if (!email) {
+    const profileStr = localStorage.getItem('mm_user_profile');
+    let userId = '';
+    if (profileStr) {
+      try {
+        userId = JSON.parse(profileStr).id;
+      } catch {}
+    }
+    if (!userId) {
       router.push('/login');
       return;
     }
@@ -47,7 +54,7 @@ export default function ChatsPage() {
       setLoading(true);
       setError('');
       try {
-        const res = await fetch(`/api/chats?email=${encodeURIComponent(email)}`);
+        const res = await fetch(`/api/chats?userId=${encodeURIComponent(userId)}`);
         if (!res.ok) {
           throw new Error('Failed to fetch chats');
         }
@@ -75,9 +82,9 @@ export default function ChatsPage() {
       </div>
       <h1 className="text-4xl font-serif font-bold text-[#D4AF37] mb-8 text-center">My Chats</h1>
       <div className="max-w-4xl mx-auto">
-        {chats.filter(chat => chat.chatId !== 'chats').length > 0 ? (
+        {chats.length > 0 ? (
           <div className="space-y-4">
-            {chats.filter(chat => chat.chatId !== 'chats').map(chat => (
+            {chats.map(chat => (
               <ChatListItem key={chat.chatId} chat={chat} />
             ))}
           </div>

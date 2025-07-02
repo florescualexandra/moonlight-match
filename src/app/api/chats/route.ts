@@ -1,27 +1,23 @@
 // @ts-nocheck
 import { NextResponse } from 'next/server';
-import { prisma } from "../../../lib/prisma";
+import { prisma } from '../../../lib/prisma';
 
 // GET all chats for a user
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const userEmail = searchParams.get('email');
+  const userId = searchParams.get('userId');
 
-  if (!userEmail) {
-    return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+  if (!userId) {
+    return NextResponse.json({ error: 'userId is required' }, { status: 400 });
   }
 
   try {
-    const user = await prisma.user.findUnique({ where: { email: userEmail } });
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
+    // Find all chats where the user is part of the match
     const chats = await prisma.chat.findMany({
       where: {
         OR: [
-          { match: { userId: user.id } },
-          { match: { matchedUserId: user.id } },
+          { match: { userId } },
+          { match: { matchedUserId: userId } },
         ],
       },
       include: {
@@ -34,82 +30,46 @@ export async function GET(request: Request) {
         messages: {
           orderBy: { createdAt: 'desc' },
           take: 1,
-          include: {
-            sender: {
-              select: { name: true }
-            }
-          }
         },
       },
-      orderBy: {
-        updatedAt: 'desc',
-      }
+      orderBy: { updatedAt: 'desc' },
     });
 
-    // Transform chats to the structure expected by the frontend
-    const chatItems = chats
-      .filter(chat => chat.match) // Only include chats with a valid match
-      .map(chat => {
-        // Determine the other user
-        let otherUser = null;
-        if (chat.match.user.id === user.id) {
-          otherUser = chat.match.matchedUser;
-        } else {
-          otherUser = chat.match.user;
-        }
-        return {
-          chatId: chat.id,
-          otherUserName: otherUser?.name || 'Anonymous',
-          otherUserImage: otherUser?.image || null,
-          lastMessage: chat.messages[0]?.content || '',
-          lastMessageTimestamp: chat.messages[0]?.createdAt || chat.updatedAt,
-        };
-      });
-
+    // Transform for frontend
+    const chatItems = chats.map(chat => {
+      let otherUser = chat.match.userId === userId ? chat.match.matchedUser : chat.match.user;
+      return {
+        chatId: chat.id,
+        otherUserName: otherUser?.name || 'Anonymous',
+        otherUserImage: otherUser?.image || null,
+        lastMessage: chat.messages[0]?.content || '',
+        lastMessageTimestamp: chat.messages[0]?.createdAt || chat.updatedAt,
+        matchId: chat.matchId,
+      };
+    });
     return NextResponse.json({ chats: chatItems });
   } catch (error) {
     console.error('Error fetching chats:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch chats' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch chats' }, { status: 500 });
   }
 }
 
-// POST to create a new chat
+// POST to create a new chat for a match
 export async function POST(request: Request) {
-    try {
-        const { matchId } = await request.json();
-
-        if (!matchId) {
-            return NextResponse.json({ error: 'Match ID is required' }, { status: 400 });
-        }
-        
-        // Check if a chat for this match already exists
-        const existingChat = await prisma.chat.findUnique({
-            where: { matchId },
-        });
-
-        if (existingChat) {
-            return NextResponse.json({ chat: existingChat });
-        }
-        
-        // Verify the match exists before creating a chat for it
-        const match = await prisma.match.findUnique({ where: { id: matchId }});
-        if (!match) {
-            return NextResponse.json({ error: 'Match not found' }, { status: 404 });
-        }
-
-        // Create new chat
-        const newChat = await prisma.chat.create({
-            data: {
-                matchId: matchId,
-            },
-        });
-
-        return NextResponse.json({ chat: newChat }, { status: 201 });
-    } catch (error) {
-        console.error('Error creating chat:', error);
-        return NextResponse.json({ error: 'Failed to create chat' }, { status: 500 });
+  try {
+    const { matchId } = await request.json();
+    if (!matchId) {
+      return NextResponse.json({ error: 'matchId is required' }, { status: 400 });
     }
+    // Check if chat exists
+    let chat = await prisma.chat.findUnique({ where: { matchId } });
+    if (!chat) {
+      // Create chat for this match
+      chat = await prisma.chat.create({ data: { matchId } });
+    }
+    return NextResponse.json({ chat }, { status: 201 });
+  } catch (error) {
+    console.error('Error creating chat:', error);
+    return NextResponse.json({ error: 'Failed to create chat' }, { status: 500 });
+  }
 } 

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface Message {
@@ -21,7 +21,9 @@ export default function ChatRoomPage() {
   const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const chatId = params.chatId as string;
+  const matchId = searchParams.get('matchId') || '';
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
   // Defensive check for invalid chatId
@@ -80,7 +82,7 @@ export default function ChatRoomPage() {
       const res = await fetch(`/api/chats/${chatId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newMessage, senderId: currentUser.id }),
+        body: JSON.stringify({ content: newMessage, senderId: currentUser.id, matchId }),
       });
 
       if (res.ok) {

@@ -1,25 +1,24 @@
 // @ts-nocheck
 import { NextResponse } from 'next/server';
-import { prisma } from "../../../../../lib/prisma";
+import { prisma } from '../../../../../lib/prisma';
 
 // GET all messages for a chat
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const chatId = url.pathname.split("/").slice(-3, -2)[0];
+  const chatId = url.pathname.split('/').slice(-3, -2)[0];
+
+  if (!chatId || chatId === 'chats') {
+    return NextResponse.json({ error: 'Invalid chatId' }, { status: 400 });
+  }
 
   try {
     const messages = await prisma.message.findMany({
       where: { chatId },
       include: {
-        sender: {
-          select: { id: true, name: true }
-        }
+        sender: { select: { id: true, name: true } },
       },
-      orderBy: {
-        createdAt: 'asc'
-      }
+      orderBy: { createdAt: 'asc' },
     });
-
     return NextResponse.json({ messages });
   } catch (error) {
     console.error(`Error fetching messages for chat ${chatId}:`, error);
@@ -30,13 +29,15 @@ export async function GET(request: Request) {
 // POST a new message to a chat
 export async function POST(request: Request) {
   const url = new URL(request.url);
-  const chatId = url.pathname.split("/").slice(-3, -2)[0];
+  const chatId = url.pathname.split('/').slice(-3, -2)[0];
   const body = await request.json();
   const { content, senderId, matchId } = body;
 
   if (!content || !senderId) {
-    console.error(`POST /api/chats/${chatId}/messages missing content or senderId`, body);
     return NextResponse.json({ error: 'Content and senderId are required' }, { status: 400 });
+  }
+  if (!chatId || chatId === 'chats') {
+    return NextResponse.json({ error: 'Invalid chatId' }, { status: 400 });
   }
 
   try {
@@ -46,11 +47,9 @@ export async function POST(request: Request) {
       if (matchId) {
         chat = await prisma.chat.create({ data: { id: chatId, matchId } });
       } else {
-        console.error(`POST /api/chats/${chatId}/messages: Chat does not exist and matchId not provided`, body);
         return NextResponse.json({ error: 'Chat does not exist and matchId not provided' }, { status: 400 });
       }
     }
-
     const newMessage = await prisma.message.create({
       data: {
         chatId: chat.id,
@@ -58,12 +57,9 @@ export async function POST(request: Request) {
         content,
       },
       include: {
-        sender: {
-            select: { id: true, name: true }
-        }
-      }
+        sender: { select: { id: true, name: true } },
+      },
     });
-
     return NextResponse.json({ message: newMessage }, { status: 201 });
   } catch (error) {
     console.error(`Error sending message to chat ${chatId}:`, error, body);
