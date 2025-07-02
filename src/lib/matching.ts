@@ -309,20 +309,21 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   const gA = genderA[0] || "";
   const gB = genderB[0] || "";
 
-  // Height and age are now soft constraints (not hard dealbreakers)
+  // --- Penalties: proportional for age and height ---
   let heightPenalty = 0;
-  if (partnerPhysicalA.includes("tall")) {
-    if ((gB === "male" && (heightB === null || heightB < 175)) || (gB === "female" && (heightB === null || heightB < 170))) {
-      heightPenalty += 0.3; // up to you: 0.3 penalty if not tall enough
-      console.log(`[MATCH-DEBUG] Height penalty: ${emailA} wants tall, but ${emailB} is ${heightB}cm (${gB})`);
-    }
+  if (partnerPhysicalA.includes("tall") && gB === "male" && heightB !== null && heightB < 175) {
+    heightPenalty += 0.02 * (175 - heightB);
   }
-  if (partnerPhysicalB.includes("tall")) {
-    if ((gA === "male" && (heightA === null || heightA < 175)) || (gA === "female" && (heightA === null || heightA < 170))) {
-      heightPenalty += 0.3;
-      console.log(`[MATCH-DEBUG] Height penalty: ${emailB} wants tall, but ${emailA} is ${heightA}cm (${gA})`);
-    }
+  if (partnerPhysicalA.includes("tall") && gB === "female" && heightB !== null && heightB < 170) {
+    heightPenalty += 0.02 * (170 - heightB);
   }
+  if (partnerPhysicalB.includes("tall") && gA === "male" && heightA !== null && heightA < 175) {
+    heightPenalty += 0.02 * (175 - heightA);
+  }
+  if (partnerPhysicalB.includes("tall") && gA === "female" && heightA !== null && heightA < 170) {
+    heightPenalty += 0.02 * (170 - heightA);
+  }
+  heightPenalty = Math.min(heightPenalty, 0.2); // cap penalty
 
   // 3. Age preference (handle 'No preference' and empty gracefully)
   const ageA = parseInt(responsesA[fields.age]);
@@ -330,14 +331,15 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   const agePrefA = parseAgeRange(responsesA[fields.agePref] || "");
   const agePrefB = parseAgeRange(responsesB[fields.agePref] || "");
   let agePenalty = 0;
-  if (agePrefA && (isNaN(ageB) || ageB < agePrefA[0] || ageB > agePrefA[1])) {
-    agePenalty += 0.3; // up to you: 0.3 penalty if outside preferred range
-    console.log(`[MATCH-DEBUG] Age penalty: ${emailA} wants ${agePrefA[0]}–${agePrefA[1]}, but ${emailB} is ${ageB}`);
+  if (agePrefA && !isNaN(ageB)) {
+    if (ageB < agePrefA[0]) agePenalty += 0.05 * (agePrefA[0] - ageB);
+    if (ageB > agePrefA[1]) agePenalty += 0.05 * (ageB - agePrefA[1]);
   }
-  if (agePrefB && (isNaN(ageA) || ageA < agePrefB[0] || ageA > agePrefB[1])) {
-    agePenalty += 0.3;
-    console.log(`[MATCH-DEBUG] Age penalty: ${emailB} wants ${agePrefB[0]}–${agePrefB[1]}, but ${emailA} is ${ageA}`);
+  if (agePrefB && !isNaN(ageA)) {
+    if (ageA < agePrefB[0]) agePenalty += 0.05 * (agePrefB[0] - ageA);
+    if (ageA > agePrefB[1]) agePenalty += 0.05 * (ageA - agePrefB[1]);
   }
+  agePenalty = Math.min(agePenalty, 0.3); // cap penalty
 
   // 4. Dealbreakers (toxic traits)
   function toArray(val: any): string[] {
@@ -361,10 +363,11 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   let totalScore = 0;
   let totalWeight = 0;
 
+  // --- Increase weights for shared interests ---
   const weights = {
-    hobbies: 2,
-    music: 1.5,
-    movies: 1.5,
+    hobbies: 3, // was 2
+    music: 2.5, // was 1.5
+    movies: 2.5, // was 1.5
     age: 2,
     gender: 2,
   };
@@ -417,6 +420,13 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   let rawScore = totalWeight === 0 ? 0.5 : Math.max(0, Math.min(1, totalScore / totalWeight));
   let penalty = heightPenalty + agePenalty;
   let finalScore = Math.max(0, rawScore - penalty);
+
+  // Optional normalization (only for nonzero scores)
+  if (finalScore > 0) {
+    // Assume 0.2 is the lowest reasonable score, stretch to [0.3, 1.0]
+    finalScore = 0.3 + 0.7 * ((finalScore - 0.2) / 0.8);
+    finalScore = Math.max(0.3, Math.min(1, finalScore));
+  }
   return finalScore;
 }
 
