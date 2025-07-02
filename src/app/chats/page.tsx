@@ -1,122 +1,81 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-interface ChatItem {
-  chatId: string;
-  otherUserName: string | null;
-  otherUserImage: string | null;
-  lastMessage: string;
-  lastMessageTimestamp: string;
-  matchId: string;
+interface Chat {
+  id: string;
+  match: {
+    id: string;
+    userId: string;
+    matchedUserId: string;
+    user: { name?: string; image?: string } | null;
+    matchedUser: { name?: string; image?: string } | null;
+  };
 }
 
-const ChatListItem = ({ chat }: { chat: ChatItem }) => {
-  const router = useRouter();
-  const handleClick = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    // Ensure chat exists by POSTing to /api/chats with matchId
-    const res = await fetch('/api/chats', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ matchId: chat.matchId }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const chatId = data.chat.id;
-      router.push(`/chat/${chatId}?matchId=${chat.matchId}`);
-    } else {
-      alert('Failed to open chat.');
-    }
-  };
-  return (
-    <a href="#" onClick={handleClick} className="block w-full">
-      <div className="flex items-center p-4 bg-white/10 rounded-2xl shadow-lg backdrop-blur-sm border border-white/20 hover:bg-white/20 transition duration-300">
-        <img
-          src={chat.otherUserImage || '/default-avatar.png'}
-          alt={chat.otherUserName || 'User'}
-          className="w-16 h-16 rounded-full object-cover mr-4"
-        />
-        <div className="flex-grow">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xl font-bold text-white">{chat.otherUserName || 'Anonymous'}</h3>
-            <p className="text-xs text-white/60">{new Date(chat.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-          </div>
-          <p className="text-white/80 truncate">{chat.lastMessage}</p>
-        </div>
-      </div>
-    </a>
-  );
-};
-
 export default function ChatsPage() {
-  const [chats, setChats] = useState<ChatItem[]>([]);
+  const [chats, setChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const router = useRouter();
+
+  // Get userId from localStorage (replace with real auth in production)
+  const userId = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("mm_user_profile") || '{}').id : null;
 
   useEffect(() => {
-    const profileStr = localStorage.getItem('mm_user_profile');
-    let userId = '';
-    if (profileStr) {
-      try {
-        userId = JSON.parse(profileStr).id;
-      } catch {}
-    }
-    if (!userId) {
-      router.push('/login');
-      return;
-    }
+    if (!userId) return;
+    setLoading(true);
+    fetch(`/api/chats?userId=${userId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.chats) setChats(data.chats);
+        else setError(data.error || "Failed to load chats");
+      })
+      .catch(() => setError("Failed to load chats"))
+      .finally(() => setLoading(false));
+  }, [userId]);
 
-    const fetchChats = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const res = await fetch(`/api/chats?userId=${encodeURIComponent(userId)}`);
-        if (!res.ok) {
-          throw new Error('Failed to fetch chats');
-        }
-        const data = await res.json();
-        setChats(data.chats);
-      } catch (err: any) {
-        setError(err.message || 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchChats();
-    const interval = setInterval(fetchChats, 5000); // Poll every 5 seconds
-    return () => clearInterval(interval);
-  }, [router]);
-
-  if (loading) return <div className="text-center text-white p-10">Loading your chats...</div>;
-  if (error) return <div className="text-center text-red-500 p-10">{error}</div>;
+  if (!userId) {
+    return <div className="text-center text-white p-10">Please log in to view your chats.</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-[#181c24] p-8">
-      <div className="max-w-4xl mx-auto mb-6">
-        <Link href="/user" className="inline-block mb-4 px-6 py-2 rounded-full bg-[#D4AF37] text-[#181c24] font-bold border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition">&larr; Back to Dashboard</Link>
-      </div>
-      <h1 className="text-4xl font-serif font-bold text-[#D4AF37] mb-8 text-center">My Chats</h1>
-      <div className="max-w-4xl mx-auto">
-        {chats.length > 0 ? (
-          <div className="space-y-4">
-            {chats.map(chat => (
-              <ChatListItem key={chat.chatId} chat={chat} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center bg-white/5 rounded-2xl p-10">
-            <p className="text-white text-lg">You have no active conversations yet.</p>
-            <p className="text-white/70 mt-2">When you start a chat with one of your matches, it will appear here.</p>
-            <Link href="/matches" className="mt-6 inline-block px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold hover:bg-[#e6c97a] transition">
-              View Your Matches
-            </Link>
-          </div>
-        )}
-      </div>
+    <div className="min-h-screen bg-[#181c24] py-10 px-4">
+      <h1 className="text-3xl font-bold text-[#D4AF37] mb-8 text-center">My Chats</h1>
+      {loading ? (
+        <div className="text-white text-center">Loading chats...</div>
+      ) : error ? (
+        <div className="text-red-500 text-center">{error}</div>
+      ) : chats.length === 0 ? (
+        <div className="text-white text-center">No chats yet. Start a conversation with your matches!</div>
+      ) : (
+        <div className="max-w-2xl mx-auto flex flex-col gap-4">
+          {chats.map(chat => {
+            // Show the other user's info
+            const isUserA = chat.match.userId === userId;
+            const other = isUserA ? chat.match.matchedUser : chat.match.user;
+            return (
+              <div
+                key={chat.id}
+                className="bg-[#23283a] rounded-xl p-4 flex items-center gap-4 cursor-pointer hover:bg-[#2c3142] transition"
+                onClick={() => router.push(`/chat/${chat.id}`)}
+              >
+                <div className="w-12 h-12 rounded-full bg-[#D4AF37] flex items-center justify-center text-xl font-bold text-[#181c24] overflow-hidden">
+                  {other?.image ? (
+                    <img src={other.image} alt={other.name || "User"} className="w-full h-full object-cover rounded-full" />
+                  ) : (
+                    (other?.name?.[0] || "?").toUpperCase()
+                  )}
+                </div>
+                <div>
+                  <div className="text-lg font-semibold text-white">{other?.name || "User"}</div>
+                  <div className="text-sm text-[#D4AF37]">Click to open chat</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 } 

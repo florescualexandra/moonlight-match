@@ -249,11 +249,81 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
     movies: "What type of movie or TV show do you prefer? (Select all that apply)",
     age: "How old are you?",
     gender: "What is your gender?",
-    // Add more as needed
+    partnerGender: "Which gender do you prefer for your ideal partner? (Select all that apply)",
+    height: "How tall are you?",
+    partnerPhysical: "What physical attributes are most attractive to you in a partner? (Select all that apply)",
+    agePref: "What age range do you prefer?",
+    dealBreakers: "Which of these traits would be deal breakers for you? (Select all that apply)",
+    vices: "Which of the following vices would you say you have? (Select all that apply):",
   };
 
   const responsesA = userA.formResponse || {};
   const responsesB = userB.formResponse || {};
+
+  // --- HARD DEALBREAKERS ---
+  // 1. Gender preference
+  const genderPrefA = (responsesA[fields.partnerGender] || "").toLowerCase();
+  const genderA = (responsesA[fields.gender] || "").toLowerCase();
+  const genderPrefB = (responsesB[fields.partnerGender] || "").toLowerCase();
+  const genderB = (responsesB[fields.gender] || "").toLowerCase();
+  if (
+    (genderPrefA && genderB && !genderPrefA.includes(genderB) && !genderPrefA.includes("any") && !genderPrefA.includes("all")) ||
+    (genderPrefB && genderA && !genderPrefB.includes(genderA) && !genderPrefB.includes("any") && !genderPrefB.includes("all"))
+  ) {
+    return 0;
+  }
+
+  // 2. Height preference (if 'Tall' is required)
+  const heightA = parseHeight(responsesA[fields.height] || "");
+  const heightB = parseHeight(responsesB[fields.height] || "");
+  const partnerPhysicalA = (responsesA[fields.partnerPhysical] || "").toLowerCase();
+  const partnerPhysicalB = (responsesB[fields.partnerPhysical] || "").toLowerCase();
+  if (partnerPhysicalA.includes("tall")) {
+    if ((genderB === "male" && (heightB === null || heightB < 175)) || (genderB === "female" && (heightB === null || heightB < 170))) {
+      return 0;
+    }
+  }
+  if (partnerPhysicalB.includes("tall")) {
+    if ((genderA === "male" && (heightA === null || heightA < 175)) || (genderA === "female" && (heightA === null || heightA < 170))) {
+      return 0;
+    }
+  }
+
+  // 3. Age preference
+  const ageA = parseInt(responsesA[fields.age]);
+  const ageB = parseInt(responsesB[fields.age]);
+  // Parse age range like "26–35"
+  function parseAgeRange(str: string): [number, number] | null {
+    if (!str) return null;
+    const match = str.match(/(\d+)[^\d]+(\d+)/);
+    if (match) return [parseInt(match[1]), parseInt(match[2])];
+    return null;
+  }
+  const agePrefA = parseAgeRange(responsesA[fields.agePref] || "");
+  const agePrefB = parseAgeRange(responsesB[fields.agePref] || "");
+  if (agePrefA && (isNaN(ageB) || ageB < agePrefA[0] || ageB > agePrefA[1])) {
+    return 0;
+  }
+  if (agePrefB && (isNaN(ageA) || ageA < agePrefB[0] || ageA > agePrefB[1])) {
+    return 0;
+  }
+
+  // 4. Dealbreakers (toxic traits)
+  function toArray(val: any): string[] {
+    if (!val) return [];
+    if (Array.isArray(val)) return val.map((v) => v.toLowerCase());
+    return val.split(',').map((v: string) => v.trim().toLowerCase());
+  }
+  const dealBreakersA = toArray(responsesA[fields.dealBreakers]);
+  const vicesB = toArray(responsesB[fields.vices]);
+  const dealBreakersB = toArray(responsesB[fields.dealBreakers]);
+  const vicesA = toArray(responsesA[fields.vices]);
+  if (dealBreakersA.some((db) => vicesB.some((v) => v.includes(db) || db.includes(v)))) {
+    return 0;
+  }
+  if (dealBreakersB.some((db) => vicesA.some((v) => v.includes(db) || db.includes(v)))) {
+    return 0;
+  }
 
   let totalScore = 0;
   let totalWeight = 0;
