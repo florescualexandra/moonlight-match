@@ -309,21 +309,21 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   const gA = genderA[0] || "";
   const gB = genderB[0] || "";
 
-  // --- Penalties: proportional for age and height ---
+  // --- Penalties: proportional for age and height (less harsh) ---
   let heightPenalty = 0;
   if (partnerPhysicalA.includes("tall") && gB === "male" && heightB !== null && heightB < 175) {
-    heightPenalty += 0.02 * (175 - heightB);
+    heightPenalty += 0.01 * (175 - heightB);
   }
   if (partnerPhysicalA.includes("tall") && gB === "female" && heightB !== null && heightB < 170) {
-    heightPenalty += 0.02 * (170 - heightB);
+    heightPenalty += 0.01 * (170 - heightB);
   }
   if (partnerPhysicalB.includes("tall") && gA === "male" && heightA !== null && heightA < 175) {
-    heightPenalty += 0.02 * (175 - heightA);
+    heightPenalty += 0.01 * (175 - heightA);
   }
   if (partnerPhysicalB.includes("tall") && gA === "female" && heightA !== null && heightA < 170) {
-    heightPenalty += 0.02 * (170 - heightA);
+    heightPenalty += 0.01 * (170 - heightA);
   }
-  heightPenalty = Math.min(heightPenalty, 0.2); // cap penalty
+  heightPenalty = Math.min(heightPenalty, 0.1); // cap penalty
 
   // 3. Age preference (handle 'No preference' and empty gracefully)
   const ageA = parseInt(responsesA[fields.age]);
@@ -332,14 +332,14 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   const agePrefB = parseAgeRange(responsesB[fields.agePref] || "");
   let agePenalty = 0;
   if (agePrefA && !isNaN(ageB)) {
-    if (ageB < agePrefA[0]) agePenalty += 0.05 * (agePrefA[0] - ageB);
-    if (ageB > agePrefA[1]) agePenalty += 0.05 * (ageB - agePrefA[1]);
+    if (ageB < agePrefA[0]) agePenalty += 0.02 * (agePrefA[0] - ageB);
+    if (ageB > agePrefA[1]) agePenalty += 0.02 * (ageB - agePrefA[1]);
   }
   if (agePrefB && !isNaN(ageA)) {
-    if (ageA < agePrefB[0]) agePenalty += 0.05 * (agePrefB[0] - ageA);
-    if (ageA > agePrefB[1]) agePenalty += 0.05 * (ageA - agePrefB[1]);
+    if (ageA < agePrefB[0]) agePenalty += 0.02 * (agePrefB[0] - ageA);
+    if (ageA > agePrefB[1]) agePenalty += 0.02 * (ageA - agePrefB[1]);
   }
-  agePenalty = Math.min(agePenalty, 0.3); // cap penalty
+  agePenalty = Math.min(agePenalty, 0.15); // cap penalty
 
   // 4. Dealbreakers (toxic traits)
   function toArray(val: any): string[] {
