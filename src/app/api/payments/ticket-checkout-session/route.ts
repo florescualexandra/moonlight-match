@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
         quantity: 1,
       }],
       mode: 'payment',
-      success_url: 'https://your-app.com/payment-success',
-      cancel_url: 'https://your-app.com/payment-cancel',
+      success_url: 'https://moonlight-match-website.vercel.app/user/events',
+      cancel_url: 'https://moonlight-match-website.vercel.app/events',
       metadata: { eventId, userId, type: 'event_ticket' },
       payment_intent_data: {
         metadata: { eventId, userId, type: 'event_ticket' }
