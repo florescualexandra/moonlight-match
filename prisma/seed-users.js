@@ -1,9 +1,39 @@
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 const users = [
+  {
+    name: 'Alexandra Florea',
+    email: 'a@test.com',
+    formResponse: {
+      'Timestamp': '01.07.2025 22:25:40',
+      'Name': 'Alexandra Florea',
+      'How old are you?': '25',
+      'How tall are you?': '165 - 170 cm',
+      'What is your occupation?': 'doctor',
+      'What are your main hobbies or interests? (Select all that apply)': 'Music/Art, Tv shows/Movies, Cooking/Baking, Reading',
+      'Do you have pets?': 'No, but I would love to',
+      'What is your favorite music genre? (Select all that apply)': 'Pop, Jazz/Blues',
+      'Favorite artist/band': '',
+      'What type of movie or TV show do you prefer? (Select all that apply)': 'Comedy, Science Fiction/Fantasy',
+      'How often do you engage in physical activity?': 'Occasionally (once a week or less)',
+      'What type of physical activity do you prefer?': 'Gym/Fitness classes, Yoga/Pilates',
+      'Which type of vacation do you prefer? (Select all that apply)': 'No strong preference',
+      'Which of these activities do you enjoy? (Select all that apply)': 'Swimming/Water sports',
+      'Which of these are on your bucket list? (Select all that apply)': 'Traveling to a new continent, Starting your own business',
+      'Which of the following vices would you say you have? (Select all that apply):': 'None of the above',
+      'Which gender do you prefer for your ideal partner? (Select all that apply)': 'Male',
+      'What physical traits do you find attractive?': 'Tall, Athletic build',
+      'Preferred age range for your ideal partner': '26–35',
+      'How active do you consider yourself?': 'Moderately active',
+      'How important is it that your partner is pet-friendly?': '5',
+      'How important is it that your partner is child-friendly?': '5',
+      'Which of these traits would be deal breakers for you? (Select all that apply)': 'Lack of ambition, Poor hygiene',
+      'What is your gender?': 'Female',
+    },
+  },
   { name: 'Mark Sullivan', email: 'mark.sullivan@example.com' },
   { name: 'Tammy Chan', email: 'tammy.chan@example.com' },
   { name: 'Jason Serrano', email: 'jason.serrano@example.com' },
@@ -53,7 +83,6 @@ const users = [
   { name: 'Paul Radu', email: 'paul.radu@example.com' },
   { name: 'Simona Vlad', email: 'simona.vlad@example.com' },
   { name: 'Florin Gheorghe', email: 'florin.gheorghe@example.com' },
-  { name: 'Alexandra Florea', email: 'a@test.com' },
   { name: 'Alina Nistor', email: 'alina.nistor@example.com' },
   { name: 'Valentin Badea', email: 'valentin.badea@example.com' },
   { name: 'Andreea Popescu', email: 'andreea.popescu@example.com' },
@@ -72,38 +101,32 @@ const users = [
 ];
 
 async function main() {
-  const password = 'password123';
-  const hashedPassword = await bcrypt.hash(password, 10);
+  // Ensure the 'last' event exists
+  let event = await prisma.event.findFirst({ where: { name: 'last' } });
+  if (!event) {
+    event = await prisma.event.create({ data: { name: 'last', date: new Date() } });
+  }
 
   for (const user of users) {
-    // Skip admin
-    if (user.email === 'admin@user.com') continue;
+    const hashedPassword = await bcrypt.hash('password123', 10);
     const dbUser = await prisma.user.upsert({
       where: { email: user.email },
-      update: {},
+      update: { name: user.name, password: hashedPassword, formResponse: user.formResponse },
       create: {
+        name: user.name,
         email: user.email,
         password: hashedPassword,
-        name: user.name,
+        formResponse: user.formResponse,
       },
     });
-    // Create ticket for the test event if not exists
-    const existingTicket = await prisma.ticket.findFirst({
-      where: {
-        userId: dbUser.id,
-        eventId: 'cmckmarxb0000lf0af2kqlcqi',
-      },
+    // Create a ticket for the event if not exists
+    await prisma.ticket.upsert({
+      where: { userId_eventId: { userId: dbUser.id, eventId: event.id } },
+      update: {},
+      create: { userId: dbUser.id, eventId: event.id },
     });
-    if (!existingTicket) {
-      await prisma.ticket.create({
-        data: {
-          userId: dbUser.id,
-          eventId: 'cmckmarxb0000lf0af2kqlcqi',
-        },
-      });
-    }
+    console.log(`User ${user.name} created/updated and ticket assigned.`);
   }
-  console.log('Users and tickets seeded successfully.');
 }
 
 main()

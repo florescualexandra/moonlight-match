@@ -4,17 +4,28 @@ import { JWT } from 'google-auth-library';
 // import path from 'path';
 
 // Load service account credentials from environment variable
-const serviceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON!);
+let serviceAccountKey: any;
+let jwtClient: JWT;
+let sheets: any;
 
-// Create JWT client
-const jwtClient = new JWT({
-  email: serviceAccountKey.client_email,
-  key: serviceAccountKey.private_key,
-  scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-});
+// Only initialize if we're in a runtime environment (not during build)
+if (typeof window === 'undefined' && process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+  try {
+    serviceAccountKey = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    
+    // Create JWT client
+    jwtClient = new JWT({
+      email: serviceAccountKey.client_email,
+      key: serviceAccountKey.private_key,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    });
 
-// Create Google Sheets API client
-const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    // Create Google Sheets API client
+    sheets = google.sheets({ version: 'v4', auth: jwtClient });
+  } catch (error) {
+    console.error('Error parsing Google service account JSON:', error);
+  }
+}
 
 export interface FormResponse {
   timestamp: string;
@@ -24,6 +35,10 @@ export interface FormResponse {
 
 export async function fetchFormResponses(spreadsheetId: string, range: string = 'A:Z'): Promise<FormResponse[]> {
   try {
+    if (!jwtClient || !sheets) {
+      throw new Error('Google Sheets client not initialized');
+    }
+
     // Authorize the client
     await jwtClient.authorize();
 
@@ -44,7 +59,7 @@ export async function fetchFormResponses(spreadsheetId: string, range: string = 
     const dataRows = rows.slice(1);
 
     // Convert rows to objects
-    const formResponses: FormResponse[] = dataRows.map((row) => {
+    const formResponses: FormResponse[] = dataRows.map((row: any[]) => {
       const response: FormResponse = {
         timestamp: '',
         email: '',
@@ -73,6 +88,10 @@ export async function fetchFormResponses(spreadsheetId: string, range: string = 
 
 export async function getSpreadsheetInfo(spreadsheetId: string) {
   try {
+    if (!jwtClient || !sheets) {
+      throw new Error('Google Sheets client not initialized');
+    }
+
     await jwtClient.authorize();
     
     const response = await sheets.spreadsheets.get({
@@ -81,7 +100,7 @@ export async function getSpreadsheetInfo(spreadsheetId: string) {
 
     return {
       title: response.data.properties?.title,
-      sheets: response.data.sheets?.map(sheet => ({
+      sheets: response.data.sheets?.map((sheet: any) => ({
         title: sheet.properties?.title,
         sheetId: sheet.properties?.sheetId,
       })),
