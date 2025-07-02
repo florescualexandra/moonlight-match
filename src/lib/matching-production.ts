@@ -216,6 +216,45 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
     const responsesA = userA.formResponse || {};
     const responsesB = userB.formResponse || {};
 
+    // --- HARD EXCLUSION: Gender preference must match for both users ---
+    const genderA = (responsesA['What is your gender?'] || '').toLowerCase();
+    const genderB = (responsesB['What is your gender?'] || '').toLowerCase();
+    const partnerGenderA = (responsesA['Which gender do you prefer for your ideal partner? (Select all that apply)'] || '').toLowerCase();
+    const partnerGenderB = (responsesB['Which gender do you prefer for your ideal partner? (Select all that apply)'] || '').toLowerCase();
+
+    // If either user's preference does not include the other's gender, return 0
+    if (
+      (partnerGenderA && genderB && !partnerGenderA.includes(genderB) && !partnerGenderA.includes('any') && !partnerGenderA.includes('all')) ||
+      (partnerGenderB && genderA && !partnerGenderB.includes(genderA) && !partnerGenderB.includes('any') && !partnerGenderB.includes('all'))
+    ) {
+      return 0; // Hard exclusion for gender
+    }
+
+    // --- STRONG PENALTY: Age preference (if implemented) ---
+    // If you have age range preferences, implement them here. For now, strong penalty if age difference > 10 years
+    let agePenalty = 1;
+    const ageA = parseInt(responsesA['How old are you?']);
+    const ageB = parseInt(responsesB['How old are you?']);
+    if (!isNaN(ageA) && !isNaN(ageB)) {
+      const ageDiff = Math.abs(ageA - ageB);
+      if (ageDiff > 10) {
+        agePenalty = 0.1; // Strong penalty for large age difference
+      }
+    }
+
+    // --- STRONG PENALTY: Deal breakers (toxic traits) ---
+    let dealBreakerPenalty = 1;
+    const dealBreakersA = (responsesA['Which of these traits would be deal breakers for you? (Select all that apply)'] || '').toLowerCase();
+    const dealBreakersB = (responsesB['Which of these traits would be deal breakers for you? (Select all that apply)'] || '').toLowerCase();
+    const vicesA = (responsesA['Which of the following vices would you say you have? (Select all that apply):'] || '').toLowerCase();
+    const vicesB = (responsesB['Which of the following vices would you say you have? (Select all that apply):'] || '').toLowerCase();
+    // If either user's deal breaker matches the other's vices, apply strong penalty
+    const toxicMatchA = dealBreakersA && vicesB && dealBreakersA.split(',').some((db: string) => vicesB.includes(db.trim()));
+    const toxicMatchB = dealBreakersB && vicesA && dealBreakersB.split(',').some((db: string) => vicesA.includes(db.trim()));
+    if (toxicMatchA || toxicMatchB) {
+      dealBreakerPenalty = 0.1; // Strong penalty for deal breaker
+    }
+
     let totalScore = 0;
     let totalWeight = 0;
 
@@ -258,7 +297,6 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
     };
 
     // Deal breakers with timeout protection
-    let dealBreakerPenalty = 0;
     if (responsesA[fields.dealBreakers] && responsesB[fields.vices]) {
       const dealBreakersA = (responsesA[fields.dealBreakers] || '').toLowerCase();
       const vicesB = (responsesB[fields.vices] || '').toLowerCase();
@@ -274,7 +312,6 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
       }
     }
     
-    totalScore -= dealBreakerPenalty;
     totalWeight += weights.dealBreakers * 2;
 
     // Gender preference
@@ -509,7 +546,8 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
       return 0;
     }
     
-    const finalScore = totalScore / totalWeight;
+    let finalScore = totalScore / totalWeight;
+    finalScore = finalScore * agePenalty * dealBreakerPenalty;
     
     let adjustedScore = finalScore;
     
