@@ -261,14 +261,35 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   const responsesB = userB.formResponse || {};
 
   // --- HARD DEALBREAKERS ---
-  // 1. Gender preference
-  const genderPrefA = (responsesA[fields.partnerGender] || "").toLowerCase();
-  const genderA = (responsesA[fields.gender] || "").toLowerCase();
-  const genderPrefB = (responsesB[fields.partnerGender] || "").toLowerCase();
-  const genderB = (responsesB[fields.gender] || "").toLowerCase();
+  // Robust parsing helpers
+  function parseGender(val: any): string[] {
+    if (!val) return [];
+    if (Array.isArray(val)) return val.map((v) => v.toLowerCase().trim());
+    return val.split(',').map((v: string) => v.toLowerCase().trim()).filter(Boolean);
+  }
+  function parseAgeRange(str: string): [number, number] | null {
+    if (!str || /no preference/i.test(str)) return null;
+    const match = str.match(/(\d+)[^\d]+(\d+)/);
+    if (match) return [parseInt(match[1]), parseInt(match[2])];
+    return null;
+  }
+
+  // Parse gender and gender preference as arrays
+  const genderPrefA = parseGender(responsesA[fields.partnerGender]);
+  const genderA = parseGender(responsesA[fields.gender]);
+  const genderPrefB = parseGender(responsesB[fields.partnerGender]);
+  const genderB = parseGender(responsesB[fields.gender]);
+
+  // Gender preference check (allow 'any', 'all', or empty = no preference)
   if (
-    (genderPrefA && genderB && !genderPrefA.includes(genderB) && !genderPrefA.includes("any") && !genderPrefA.includes("all")) ||
-    (genderPrefB && genderA && !genderPrefB.includes(genderA) && !genderPrefB.includes("any") && !genderPrefB.includes("all"))
+    genderPrefA.length && genderB.length &&
+    !genderPrefA.some((pref) => genderB.includes(pref) || pref === 'any' || pref === 'all')
+  ) {
+    return 0;
+  }
+  if (
+    genderPrefB.length && genderA.length &&
+    !genderPrefB.some((pref) => genderA.includes(pref) || pref === 'any' || pref === 'all')
   ) {
     return 0;
   }
@@ -278,27 +299,23 @@ export async function calculateCompatibility(userA: any, userB: any): Promise<nu
   const heightB = parseHeight(responsesB[fields.height] || "");
   const partnerPhysicalA = (responsesA[fields.partnerPhysical] || "").toLowerCase();
   const partnerPhysicalB = (responsesB[fields.partnerPhysical] || "").toLowerCase();
+  // Use first gender if multiple (should be only one)
+  const gA = genderA[0] || "";
+  const gB = genderB[0] || "";
   if (partnerPhysicalA.includes("tall")) {
-    if ((genderB === "male" && (heightB === null || heightB < 175)) || (genderB === "female" && (heightB === null || heightB < 170))) {
+    if ((gB === "male" && (heightB === null || heightB < 175)) || (gB === "female" && (heightB === null || heightB < 170))) {
       return 0;
     }
   }
   if (partnerPhysicalB.includes("tall")) {
-    if ((genderA === "male" && (heightA === null || heightA < 175)) || (genderA === "female" && (heightA === null || heightA < 170))) {
+    if ((gA === "male" && (heightA === null || heightA < 175)) || (gA === "female" && (heightA === null || heightA < 170))) {
       return 0;
     }
   }
 
-  // 3. Age preference
+  // 3. Age preference (handle 'No preference' and empty gracefully)
   const ageA = parseInt(responsesA[fields.age]);
   const ageB = parseInt(responsesB[fields.age]);
-  // Parse age range like "26–35"
-  function parseAgeRange(str: string): [number, number] | null {
-    if (!str) return null;
-    const match = str.match(/(\d+)[^\d]+(\d+)/);
-    if (match) return [parseInt(match[1]), parseInt(match[2])];
-    return null;
-  }
   const agePrefA = parseAgeRange(responsesA[fields.agePref] || "");
   const agePrefB = parseAgeRange(responsesB[fields.agePref] || "");
   if (agePrefA && (isNaN(ageB) || ageB < agePrefA[0] || ageB > agePrefA[1])) {
