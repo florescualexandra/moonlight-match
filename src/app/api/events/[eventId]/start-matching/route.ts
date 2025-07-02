@@ -56,23 +56,32 @@ export async function POST(req: NextRequest) {
                 const userA = users[i];
                 const userB = users[j];
 
-                // 4. Calculate compatibility
-                const score = await calculateCompatibility(userA, userB);
-                if (isNaN(score)) {
-                    console.error('Skipping match creation due to NaN score:', { userA: userA.id, userB: userB.id, eventId });
-                    continue;
+                // 4. Calculate compatibility in both directions
+                const scoreAB = await calculateCompatibility(userA, userB);
+                if (!isNaN(scoreAB)) {
+                    console.log(`Match score for ${userA.name} and ${userB.name}: ${scoreAB.toFixed(3)}`);
+                    await prisma.match.create({
+                        data: {
+                            userId: userA.id,
+                            matchedUserId: userB.id,
+                            eventId: eventId,
+                            score: scoreAB,
+                        }
+                    });
                 }
-                console.log(`Match score for ${userA.name} and ${userB.name}: ${score.toFixed(3)}`);
 
-                // 5. Store the match in the database
-                await prisma.match.create({
-                    data: {
-                        userId: userA.id,
-                        matchedUserId: userB.id,
-                        eventId: eventId,
-                        score: score,
-                    }
-                });
+                const scoreBA = await calculateCompatibility(userB, userA);
+                if (!isNaN(scoreBA)) {
+                    console.log(`Match score for ${userB.name} and ${userA.name}: ${scoreBA.toFixed(3)}`);
+                    await prisma.match.create({
+                        data: {
+                            userId: userB.id,
+                            matchedUserId: userA.id,
+                            eventId: eventId,
+                            score: scoreBA,
+                        }
+                    });
+                }
             }
         }
         
