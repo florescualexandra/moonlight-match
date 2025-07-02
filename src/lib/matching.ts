@@ -106,8 +106,12 @@ function parseHeight(height: string): number | null {
 const semanticCache = new Map<string, number>();
 
 function flattenEmbedding(embedding: any): number[] {
-  // If it's a 2D array, flatten to 1D
-  return Array.isArray(embedding[0]) ? embedding[0] : embedding;
+  // Recursively flatten to 1D array
+  if (!Array.isArray(embedding)) return [embedding];
+  return embedding.reduce(
+    (acc: number[], val: any) => acc.concat(flattenEmbedding(val)),
+    []
+  );
 }
 
 async function calculateSemanticSimilarity(textA: string, textB: string): Promise<number> {
