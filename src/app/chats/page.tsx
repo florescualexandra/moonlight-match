@@ -70,6 +70,9 @@ export default function ChatsPage() {
 
   return (
     <div className="min-h-screen bg-[#181c24] p-8">
+      <div className="max-w-4xl mx-auto mb-6">
+        <Link href="/user" className="inline-block mb-4 px-6 py-2 rounded-full bg-[#D4AF37] text-[#181c24] font-bold border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition">&larr; Back to Dashboard</Link>
+      </div>
       <h1 className="text-4xl font-serif font-bold text-[#D4AF37] mb-8 text-center">My Chats</h1>
       <div className="max-w-4xl mx-auto">
         {chats.length > 0 ? (

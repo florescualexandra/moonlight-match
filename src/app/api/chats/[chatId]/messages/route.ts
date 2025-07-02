@@ -31,9 +31,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const url = new URL(request.url);
   const chatId = url.pathname.split("/").slice(-3, -2)[0];
-  const { content, senderId, matchId } = await request.json();
+  const body = await request.json();
+  const { content, senderId, matchId } = body;
 
   if (!content || !senderId) {
+    console.error(`POST /api/chats/${chatId}/messages missing content or senderId`, body);
     return NextResponse.json({ error: 'Content and senderId are required' }, { status: 400 });
   }
 
@@ -44,6 +46,7 @@ export async function POST(request: Request) {
       if (matchId) {
         chat = await prisma.chat.create({ data: { id: chatId, matchId } });
       } else {
+        console.error(`POST /api/chats/${chatId}/messages: Chat does not exist and matchId not provided`, body);
         return NextResponse.json({ error: 'Chat does not exist and matchId not provided' }, { status: 400 });
       }
     }
@@ -63,7 +66,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ message: newMessage }, { status: 201 });
   } catch (error) {
-    console.error(`Error sending message to chat ${chatId}:`, error);
-    return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });
+    console.error(`Error sending message to chat ${chatId}:`, error, body);
+    return NextResponse.json({ error: 'Failed to send message', details: error instanceof Error ? error.message : error }, { status: 500 });
   }
 } 
