@@ -12,24 +12,43 @@ interface ChatItem {
   matchId: string;
 }
 
-const ChatListItem = ({ chat }: { chat: ChatItem }) => (
-  <Link href={{ pathname: `/chat/${chat.chatId}`, query: { matchId: chat.matchId } }} className="block w-full">
-    <div className="flex items-center p-4 bg-white/10 rounded-2xl shadow-lg backdrop-blur-sm border border-white/20 hover:bg-white/20 transition duration-300">
-      <img
-        src={chat.otherUserImage || '/default-avatar.png'}
-        alt={chat.otherUserName || 'User'}
-        className="w-16 h-16 rounded-full object-cover mr-4"
-      />
-      <div className="flex-grow">
-        <div className="flex justify-between items-center">
-          <h3 className="text-xl font-bold text-white">{chat.otherUserName || 'Anonymous'}</h3>
-          <p className="text-xs text-white/60">{new Date(chat.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+const ChatListItem = ({ chat }: { chat: ChatItem }) => {
+  const router = useRouter();
+  const handleClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Ensure chat exists by POSTing to /api/chats with matchId
+    const res = await fetch('/api/chats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matchId: chat.matchId }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const chatId = data.chat.id;
+      router.push(`/chat/${chatId}?matchId=${chat.matchId}`);
+    } else {
+      alert('Failed to open chat.');
+    }
+  };
+  return (
+    <a href="#" onClick={handleClick} className="block w-full">
+      <div className="flex items-center p-4 bg-white/10 rounded-2xl shadow-lg backdrop-blur-sm border border-white/20 hover:bg-white/20 transition duration-300">
+        <img
+          src={chat.otherUserImage || '/default-avatar.png'}
+          alt={chat.otherUserName || 'User'}
+          className="w-16 h-16 rounded-full object-cover mr-4"
+        />
+        <div className="flex-grow">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xl font-bold text-white">{chat.otherUserName || 'Anonymous'}</h3>
+            <p className="text-xs text-white/60">{new Date(chat.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+          </div>
+          <p className="text-white/80 truncate">{chat.lastMessage}</p>
         </div>
-        <p className="text-white/80 truncate">{chat.lastMessage}</p>
       </div>
-    </div>
-  </Link>
-);
+    </a>
+  );
+};
 
 export default function ChatsPage() {
   const [chats, setChats] = useState<ChatItem[]>([]);
