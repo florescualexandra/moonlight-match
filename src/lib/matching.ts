@@ -114,7 +114,7 @@ async function calculateSemanticSimilarity(textA: string, textB: string): Promis
   
   try {
     const model = await getSentenceTransformer();
-    const embeddings = await model.embed([textA, textB]);
+    const embeddings = await model([textA, textB]);
     const similarity = cosineSimilarity(embeddings[0], embeddings[1]);
     
     // Cache the result
