@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         quantity: 1,
       }],
       mode: 'payment',
-      success_url: 'https://moonlightmatch.app/payment-success',
+      success_url: 'https://moonlight-match-website.vercel.app/matches',
       cancel_url: 'https://moonlightmatch.app/payment-cancel',
       metadata: { matchId, userId, type: 'match_reveal' },
       payment_intent_data: {
