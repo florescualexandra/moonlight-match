@@ -22,7 +22,7 @@ const ChatListItem = ({ chat }: { chat: ChatItem }) => (
       <div className="flex-grow">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-bold text-white">{chat.otherUserName || 'Anonymous'}</h3>
-          <p className="text-xs text-white/60">{new Date(chat.lastMessageTimestamp).toLocaleTimeString()}</p>
+          <p className="text-xs text-white/60">{new Date(chat.lastMessageTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
         </div>
         <p className="text-white/80 truncate">{chat.lastMessage}</p>
       </div>
@@ -44,6 +44,8 @@ export default function ChatsPage() {
     }
 
     const fetchChats = async () => {
+      setLoading(true);
+      setError('');
       try {
         const res = await fetch(`/api/chats?email=${encodeURIComponent(email)}`);
         if (!res.ok) {
@@ -52,13 +54,15 @@ export default function ChatsPage() {
         const data = await res.json();
         setChats(data.chats);
       } catch (err: any) {
-        setError(err.message);
+        setError(err.message || 'Unknown error');
       } finally {
         setLoading(false);
       }
     };
 
     fetchChats();
+    const interval = setInterval(fetchChats, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
   }, [router]);
 
   if (loading) return <div className="text-center text-white p-10">Loading your chats...</div>;

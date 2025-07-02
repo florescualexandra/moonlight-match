@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface Message {
@@ -20,6 +20,7 @@ export default function ChatRoomPage() {
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
   const params = useParams();
+  const router = useRouter();
   const chatId = params.chatId as string;
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
@@ -27,8 +28,10 @@ export default function ChatRoomPage() {
     const profileStr = localStorage.getItem('mm_user_profile');
     if (profileStr) {
       setCurrentUser(JSON.parse(profileStr));
+    } else {
+      router.push('/login');
     }
-  }, []);
+  }, [router]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -57,7 +60,7 @@ export default function ChatRoomPage() {
 
   useEffect(() => {
     fetchMessages(); // Initial fetch
-    const interval = setInterval(fetchMessages, 5000); // Poll every 5 seconds
+    const interval = setInterval(fetchMessages, 3000); // Poll every 3 seconds
     return () => clearInterval(interval); // Cleanup on unmount
   }, [chatId]);
 
@@ -76,6 +79,7 @@ export default function ChatRoomPage() {
         const data = await res.json();
         setMessages(prev => [...prev, data.message]);
         setNewMessage('');
+        scrollToBottom();
       } else {
         alert('Failed to send message.');
       }
@@ -84,24 +88,26 @@ export default function ChatRoomPage() {
     }
   };
 
+  if (loading) return <div className="text-center text-white p-10">Loading chat...</div>;
+  if (error) return <div className="text-center text-red-500 p-10">{error}</div>;
+
   return (
     <div className="min-h-screen bg-[#181c24] flex flex-col p-4 md:p-8">
       <div className="flex-1 flex flex-col max-w-4xl w-full mx-auto bg-white/5 rounded-2xl shadow-lg overflow-hidden">
         <header className="bg-white/10 p-4 border-b border-white/20">
-            <Link href="/chat" className="text-[#D4AF37] hover:underline">
-                &larr; Back to Conversations
+            <Link href="/chats" className="text-[#D4AF37] hover:underline">
+                &larr; Back to My Chats
             </Link>
         </header>
         <main className="flex-1 p-6 overflow-y-auto">
-            {loading && <div className="text-center text-white">Loading messages...</div>}
-            {error && <div className="text-center text-red-500">{error}</div>}
+            {messages.length === 0 && <div className="text-center text-white/70">No messages yet. Start the conversation!</div>}
             <div className="space-y-4">
             {messages.map(msg => (
                 <div key={msg.id} className={`flex items-end gap-2 ${msg.sender.id === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
                     <div className={`px-4 py-2 rounded-2xl max-w-sm md:max-w-md ${msg.sender.id === currentUser?.id ? 'bg-[#D4AF37] text-[#181c24]' : 'bg-white/20 text-white'}`}>
                         <p className="font-bold text-sm">{msg.sender.name}</p>
                         <p>{msg.content}</p>
-                        <p className="text-xs opacity-70 text-right mt-1">{new Date(msg.createdAt).toLocaleTimeString()}</p>
+                        <p className="text-xs opacity-70 text-right mt-1">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                 </div>
             ))}

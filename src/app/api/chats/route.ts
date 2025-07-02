@@ -47,22 +47,24 @@ export async function GET(request: Request) {
     });
 
     // Transform chats to the structure expected by the frontend
-    const chatItems = chats.map(chat => {
-      // Determine the other user
-      let otherUser = null;
-      if (chat.match.user.id === user.id) {
-        otherUser = chat.match.matchedUser;
-      } else {
-        otherUser = chat.match.user;
-      }
-      return {
-        chatId: chat.id,
-        otherUserName: otherUser?.name || 'Anonymous',
-        otherUserImage: otherUser?.image || null,
-        lastMessage: chat.messages[0]?.content || '',
-        lastMessageTimestamp: chat.messages[0]?.createdAt || chat.updatedAt,
-      };
-    });
+    const chatItems = chats
+      .filter(chat => chat.match) // Only include chats with a valid match
+      .map(chat => {
+        // Determine the other user
+        let otherUser = null;
+        if (chat.match.user.id === user.id) {
+          otherUser = chat.match.matchedUser;
+        } else {
+          otherUser = chat.match.user;
+        }
+        return {
+          chatId: chat.id,
+          otherUserName: otherUser?.name || 'Anonymous',
+          otherUserImage: otherUser?.image || null,
+          lastMessage: chat.messages[0]?.content || '',
+          lastMessageTimestamp: chat.messages[0]?.createdAt || chat.updatedAt,
+        };
+      });
 
     return NextResponse.json({ chats: chatItems });
   } catch (error) {
