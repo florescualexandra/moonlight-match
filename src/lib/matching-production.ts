@@ -1,6 +1,11 @@
 // src/lib/matching-production.ts
 // Production-optimized version of the enhanced matching algorithm
 
+// Set transformers cache directory for Vercel compatibility
+if (typeof process !== 'undefined') {
+  process.env.TRANSFORMERS_CACHE = '/tmp/transformers_cache';
+}
+
 import { pipeline } from '@xenova/transformers';
 
 // Global cache for AI model and embeddings
