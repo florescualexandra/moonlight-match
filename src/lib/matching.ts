@@ -18,7 +18,7 @@ async function getSentenceTransformer() {
       console.error('Failed to load sentence transformer:', error);
       // Fallback to a simple embedding function
       sentenceTransformer = {
-        async encode(texts: string | string[]) {
+        async embed(texts: string | string[]) {
           const textArray = Array.isArray(texts) ? texts : [texts];
           return textArray.map(text => {
             // Simple fallback embedding based on character frequency
@@ -114,7 +114,7 @@ async function calculateSemanticSimilarity(textA: string, textB: string): Promis
   
   try {
     const model = await getSentenceTransformer();
-    const embeddings = await model.encode([textA, textB]);
+    const embeddings = await model.embed([textA, textB]);
     const similarity = cosineSimilarity(embeddings[0], embeddings[1]);
     
     // Cache the result
