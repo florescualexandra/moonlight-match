@@ -27,34 +27,34 @@ function numericSimilarity(a: any, b: any, maxDiff = 4) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Get eventId from the request body
-    const { eventId } = await req.json();
-    if (!eventId) {
-      return NextResponse.json({ error: "eventId is required" }, { status: 400 });
-    }
+  // Get eventId from the request body
+  const { eventId } = await req.json();
+  if (!eventId) {
+    return NextResponse.json({ error: "eventId is required" }, { status: 400 });
+  }
 
-    // Get all users for this event (with tickets)
-    const users = await prisma.user.findMany({
-      where: {
-        tickets: {
-          some: { eventId }
-        }
+  // Get all users for this event (with tickets)
+  const users = await prisma.user.findMany({
+    where: {
+      tickets: {
+        some: { eventId }
       }
-    });
+    }
+  });
 
     console.log(`Calculating matches for ${users.length} users in event ${eventId}`);
 
-    const matchesToCreate = [];
+  const matchesToCreate = [];
     const compatibilityDetails: { [key: string]: any } = {};
 
     // Calculate compatibility for all user pairs
-    for (const userA of users) {
-      if (!userA.formResponse) continue;
+  for (const userA of users) {
+    if (!userA.formResponse) continue;
       
       const scores: { userId: string; matchedUserId: string; score: number; breakdown?: any }[] = [];
       
-      for (const userB of users) {
-        if (userA.id === userB.id || !userB.formResponse) continue;
+    for (const userB of users) {
+      if (userA.id === userB.id || !userB.formResponse) continue;
         
         try {
           // Use the enhanced AI matching algorithm
@@ -90,21 +90,21 @@ export async function POST(req: NextRequest) {
       }
       
       // Sort by compatibility score (highest first)
-      scores.sort((a, b) => b.score - a.score);
+    scores.sort((a, b) => b.score - a.score);
       
       // Select top 3 matches (or fewer if not enough users)
       const topMatches = scores.slice(0, 3);
       
       for (const match of topMatches) {
-        matchesToCreate.push({
-          userId: match.userId,
-          matchedUserId: match.matchedUserId,
-          eventId,
-          score: match.score,
-          isInitiallyRevealed: false,
-          isPaidReveal: false,
-        });
-      }
+      matchesToCreate.push({
+        userId: match.userId,
+        matchedUserId: match.matchedUserId,
+        eventId,
+        score: match.score,
+        isInitiallyRevealed: false,
+        isPaidReveal: false,
+      });
+    }
       
       console.log(`User ${userA.name || userA.email}: Top match score = ${topMatches[0]?.score?.toFixed(3) || 'N/A'}`);
     }
