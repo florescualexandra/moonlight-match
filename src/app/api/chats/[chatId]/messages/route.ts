@@ -31,16 +31,26 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const url = new URL(request.url);
   const chatId = url.pathname.split("/").slice(-3, -2)[0];
-  const { content, senderId } = await request.json();
+  const { content, senderId, matchId } = await request.json();
 
   if (!content || !senderId) {
     return NextResponse.json({ error: 'Content and senderId are required' }, { status: 400 });
   }
 
   try {
+    // Check if chat exists
+    let chat = await prisma.chat.findUnique({ where: { id: chatId } });
+    if (!chat) {
+      if (matchId) {
+        chat = await prisma.chat.create({ data: { id: chatId, matchId } });
+      } else {
+        return NextResponse.json({ error: 'Chat does not exist and matchId not provided' }, { status: 400 });
+      }
+    }
+
     const newMessage = await prisma.message.create({
       data: {
-        chatId,
+        chatId: chat.id,
         senderId,
         content,
       },
