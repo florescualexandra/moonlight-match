@@ -32,11 +32,27 @@ export default function ChatRoomPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Get userId from localStorage (replace with real auth in production)
-  const userId = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("mm_user_profile") || '{}').id : null;
+  let userId: string | null = null;
+  if (typeof window !== "undefined") {
+    try {
+      const profile = JSON.parse(localStorage.getItem("mm_user_profile") || '{}');
+      userId = profile.id || null;
+      if (!userId) {
+        console.warn("No userId found in mm_user_profile:", profile);
+      }
+    } catch (e) {
+      console.warn("Failed to parse mm_user_profile from localStorage", e);
+      userId = null;
+    }
+  }
 
   // Fetch chat info and messages
   useEffect(() => {
-    if (!userId || !chatId) return;
+    if (!userId || !chatId) {
+      setError("You must be logged in to view this chat. Please log in again.");
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     fetch(`/api/chats?userId=${userId}`)
       .then(res => res.json())
@@ -85,7 +101,7 @@ export default function ChatRoomPage() {
   };
 
   if (!userId) {
-    return <div className="text-center text-white p-10">Please log in to view this chat.</div>;
+    return <div className="text-center text-red-500 p-10">You must be logged in to view this chat. Please log in again.</div>;
   }
   if (loading) {
     return <div className="text-center text-white p-10">Loading chat...</div>;
