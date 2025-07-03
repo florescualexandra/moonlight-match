@@ -15,8 +15,8 @@ interface Chat {
     id: string;
     userId: string;
     matchedUserId: string;
-    user: { name?: string; image?: string } | null;
-    matchedUser: { name?: string; image?: string } | null;
+    user: { name?: string; email?: string; image?: string } | null;
+    matchedUser: { name?: string; email?: string; image?: string } | null;
   };
 }
 
