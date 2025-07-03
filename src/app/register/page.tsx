@@ -46,8 +46,8 @@ export default function RegisterPage() {
         localStorage.setItem('mm_logged_in', 'true');
         localStorage.setItem('mm_email', data.email);
         localStorage.setItem('mm_user_profile', JSON.stringify(data));
+        window.location.href = "/user";
       }
-      router.push("/user");
     } catch (err) {
       setLoading(false);
       setError("Registration failed. Please try again.");
