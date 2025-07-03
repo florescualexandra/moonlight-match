@@ -128,7 +128,7 @@ export default function ChatRoomPage() {
             (other?.name?.[0] || "?").toUpperCase()
           )}
         </div>
-        <div className="text-lg font-semibold text-white">{other?.name || "User"}</div>
+        <div className="text-lg font-semibold text-white">{other?.name || other?.email || "Anonymous"}</div>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-2xl mx-auto w-full">
         {messages.length === 0 ? (

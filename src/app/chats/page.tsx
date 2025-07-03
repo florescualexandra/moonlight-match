@@ -41,6 +41,12 @@ export default function ChatsPage() {
 
   return (
     <div className="min-h-screen bg-[#181c24] py-10 px-4">
+      <button
+        className="mb-4 px-6 py-2 rounded-full bg-[#D4AF37] text-[#181c24] font-bold hover:bg-[#e6c97a] transition border-2 border-[#D4AF37]"
+        onClick={() => router.push('/user')}
+      >
+        &larr; Back to Dashboard
+      </button>
       <h1 className="text-3xl font-bold text-[#D4AF37] mb-8 text-center">My Chats</h1>
       {loading ? (
         <div className="text-white text-center">Loading chats...</div>

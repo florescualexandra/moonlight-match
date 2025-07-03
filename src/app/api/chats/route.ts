@@ -42,7 +42,12 @@ export async function GET(req: NextRequest) {
         },
       },
       include: {
-        match: true,
+        match: {
+          include: {
+            user: { select: { name: true, email: true, image: true } },
+            matchedUser: { select: { name: true, email: true, image: true } },
+          },
+        },
       },
     });
     return NextResponse.json({ chats });
