@@ -75,19 +75,15 @@ export default function RegisterPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
           />
-          <div className="mb-4">
-            <label className="block text-[#23283a] text-sm font-bold mb-2" htmlFor="confirmPassword">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="px-4 py-3 rounded-full border-2 border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[#D4AF37] text-[#181c24] text-lg"
-              required
-            />
-          </div>
+          <input
+            type="password"
+            required
+            placeholder="Confirm Password"
+            className="px-4 py-3 rounded-full border-2 border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[#D4AF37] text-[#181c24] text-lg"
+            id="confirmPassword"
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+          />
           <div className="mb-6">
             <label className="flex items-center text-[#23283a] text-sm">
               <input
@@ -112,6 +108,31 @@ export default function RegisterPage() {
           <b>Privacy & Security:</b> Your email and password are securely stored and never shared. We use strong encryption and never display your personal information to other users. By registering, you agree to our <a href="#" className="text-[#D4AF37] underline">Privacy Policy</a>.
         </div>
       </div>
+      <style jsx global>{`
+        input[type="password"] {
+          background-color: #fff !important;
+          border-radius: 9999px !important;
+          border-width: 2px !important;
+          border-color: #D4AF37 !important;
+          color: #181c24 !important;
+          font-size: 1.125rem !important;
+          padding: 0.75rem 1rem !important;
+          box-shadow: none !important;
+          outline: none !important;
+        }
+        input[type="password"]:focus {
+          border-color: #D4AF37 !important;
+          box-shadow: 0 0 0 2px #D4AF37 !important;
+        }
+        input[type="password"]::placeholder {
+          color: #bfa94a !important;
+          opacity: 1 !important;
+        }
+        input[type="password"]:-webkit-autofill {
+          -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+          -webkit-text-fill-color: #181c24 !important;
+        }
+      `}</style>
     </div>
   );
 } 
