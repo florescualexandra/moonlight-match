@@ -45,6 +45,13 @@ export default function MyEventsPage() {
   return (
     <div className="min-h-screen bg-[#181c24] flex flex-col items-center px-4 py-16">
       <div className="max-w-2xl w-full">
+        <button
+          className="mb-8 px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-lg border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition"
+          onClick={() => window.location.href = '/user'}
+          style={{ display: 'block', marginLeft: 0 }}
+        >
+          &larr; Back to Dashboard
+        </button>
         <h1 className="text-3xl font-serif font-bold text-[#D4AF37] mb-8 text-center">My Events</h1>
         {loading ? (
           <div className="text-white text-center">Loading your events...</div>
@@ -86,11 +93,6 @@ export default function MyEventsPage() {
             ))}
           </div>
         )}
-        <div className="mt-8 text-center">
-          <Link href="/user" className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-lg border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition">
-            Back to Dashboard
-          </Link>
-        </div>
       </div>
     </div>
   );
