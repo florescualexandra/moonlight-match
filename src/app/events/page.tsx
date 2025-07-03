@@ -208,7 +208,7 @@ export default function EventsPage() {
                   disabled={purchasing === event.id || !userId}
                   className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-lg hover:bg-[#e6c97a] transition shadow border-2 border-[#D4AF37] mt-auto disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {purchasing === event.id ? 'Processing...' : !userId ? 'Login to Purchase' : 'Buy Ticket - $25'}
+                  {purchasing === event.id ? 'Processing...' : !userId ? 'Login to Purchase' : 'Buy Ticket - 50 RON'}
                 </button>
               )}
             </div>

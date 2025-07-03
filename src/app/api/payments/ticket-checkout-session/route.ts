@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         price_data: {
           currency: 'ron',
           product_data: { name: event.name },
-          unit_amount: 200, // 2 RON in bani (Stripe minimum)
+          unit_amount: 5000, // 50 RON in bani
         },
         quantity: 1,
       }],

@@ -204,7 +204,7 @@ export default function EventDetailsPage() {
               disabled={purchasing || !userId}
               onClick={handleBuyTicket}
             >
-              {purchasing ? "Processing..." : !userId ? "Login to Purchase" : "Buy Ticket - $25"}
+              {purchasing ? "Processing..." : !userId ? "Login to Purchase" : "Buy Ticket - 50 RON"}
             </button>
           )}
 

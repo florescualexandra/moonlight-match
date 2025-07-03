@@ -39,7 +39,7 @@ export default function CheckoutForm({ onSuccess, onError }: { onSuccess?: () =>
         disabled={!stripe || loading}
         className="px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-lg hover:bg-[#e6c97a] transition border-2 border-[#D4AF37] mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? 'Processing...' : 'Pay $25'}
+        {loading ? 'Processing...' : 'Pay 50 RON'}
       </button>
     </form>
   );
