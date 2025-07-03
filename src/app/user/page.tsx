@@ -57,10 +57,10 @@ export default function UserPage() {
           <div className="bg-white rounded-2xl shadow px-4 sm:px-6 py-4 sm:py-5 flex flex-col gap-3 sm:gap-4">
             <div className="text-base sm:text-lg font-bold text-[#23283a] font-serif mb-2">Quick Actions</div>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <Link href="/matches" className="flex-1 px-4 sm:px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-base sm:text-lg border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition text-center">View All Matches</Link>
-              <Link href="/chats" className="flex-1 px-4 sm:px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-base sm:text-lg border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition text-center">My Chats</Link>
-              <Link href="/events" className="flex-1 px-4 sm:px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-base sm:text-lg border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition text-center">Browse Events</Link>
-              <Link href="/user/events" className="flex-1 px-4 sm:px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-base sm:text-lg border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition text-center">My Events</Link>
+              <Link href="/matches" className="flex-1 flex items-center justify-center px-4 sm:px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-base sm:text-lg border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition text-center whitespace-nowrap">Matches</Link>
+              <Link href="/chats" className="flex-1 flex items-center justify-center px-4 sm:px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-base sm:text-lg border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition text-center whitespace-nowrap">Chats</Link>
+              <Link href="/events" className="flex-1 flex items-center justify-center px-4 sm:px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-base sm:text-lg border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition text-center whitespace-nowrap">Events</Link>
+              <Link href="/user/events" className="flex-1 flex items-center justify-center px-4 sm:px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-base sm:text-lg border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition text-center whitespace-nowrap">My Events</Link>
             </div>
             <button
               onClick={() => {

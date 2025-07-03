@@ -52,6 +52,18 @@ async function main() {
   } else {
     console.log('Admin user already exists and is configured correctly.');
   }
+
+  // Update password for Bupsvininiculescu@gmail.com
+  const userEmail = 'Bupsvininiculescu@gmail.com';
+  const userPassword = 'password123';
+  const userHashedPassword = await bcrypt.hash(userPassword, 10);
+  const user = await prisma.user.findUnique({ where: { email: userEmail } });
+  if (user) {
+    await prisma.user.update({ where: { email: userEmail }, data: { password: userHashedPassword } });
+    console.log('Password updated for', userEmail);
+  } else {
+    console.log('User not found:', userEmail);
+  }
 }
 
 main()

@@ -3,10 +3,10 @@ const prisma = new PrismaClient();
 
 async function main() {
   try {
-    // Find the event named 'test'
-    const event = await prisma.event.findFirst({ where: { name: 'test' } });
+    // Find the event named 'demo'
+    const event = await prisma.event.findFirst({ where: { name: 'demo' } });
     if (!event) {
-      console.error("Event named 'test' not found.");
+      console.error("Event named 'demo' not found.");
       process.exit(1);
     }
     // Find all users except 'a@test.com' and admins
@@ -21,7 +21,7 @@ async function main() {
         console.log(`Enrolled user: ${user.email}`);
       }
     }
-    console.log(`\nEnrolled ${enrolled} users to event 'test'.`);
+    console.log(`\nEnrolled ${enrolled} users to event 'demo'.`);
   } catch (error) {
     console.error('Error enrolling users:', error);
   } finally {

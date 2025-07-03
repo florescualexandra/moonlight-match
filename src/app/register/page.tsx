@@ -45,7 +45,7 @@ export default function RegisterPage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem('mm_logged_in', 'true');
         localStorage.setItem('mm_email', data.email);
-        localStorage.setItem('mm_user_profile', JSON.stringify(data));
+        localStorage.setItem('mm_user_profile', JSON.stringify(data.user));
         window.location.href = "/user";
       }
     } catch (err) {

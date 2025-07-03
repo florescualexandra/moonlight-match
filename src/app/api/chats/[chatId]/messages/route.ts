@@ -52,7 +52,7 @@ export async function POST(req: NextRequest, { params }: any) {
     });
     if (!chat || (chat.match.userId !== userId && chat.match.matchedUserId !== userId)) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
-    }
+  }
     const message = await prisma.message.create({
       data: {
         chatId,

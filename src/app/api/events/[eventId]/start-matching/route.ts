@@ -60,11 +60,11 @@ export async function POST(req: NextRequest) {
                 const scoreAB = await calculateCompatibility(userA, userB);
                 if (!isNaN(scoreAB)) {
                     console.log(`Match score for ${userA.name} and ${userB.name}: ${scoreAB.toFixed(3)}`);
-                    await prisma.match.create({
-                        data: {
-                            userId: userA.id,
-                            matchedUserId: userB.id,
-                            eventId: eventId,
+                await prisma.match.create({
+                    data: {
+                        userId: userA.id,
+                        matchedUserId: userB.id,
+                        eventId: eventId,
                             score: scoreAB,
                         }
                     });
@@ -79,8 +79,8 @@ export async function POST(req: NextRequest) {
                             matchedUserId: userA.id,
                             eventId: eventId,
                             score: scoreBA,
-                        }
-                    });
+                    }
+                });
                 }
             }
         }

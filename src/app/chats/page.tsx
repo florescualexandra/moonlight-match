@@ -77,11 +77,11 @@ export default function ChatsPage() {
                   <div className="text-lg font-semibold text-white">{other?.name || "User"}</div>
                   <div className="text-sm text-[#D4AF37]">Click to open chat</div>
                 </div>
-              </div>
+          </div>
             );
           })}
-        </div>
-      )}
+          </div>
+        )}
     </div>
   );
 } 

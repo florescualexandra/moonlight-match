@@ -192,7 +192,7 @@ function MatchesContent() {
   return (
     <div className="min-h-screen bg-[#181c24] p-8">
       <button
-        className="mb-8 px-6 py-3 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-lg border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition"
+        className="mb-8 px-3 py-1.5 rounded-full bg-[#D4AF37] text-[#181c24] font-bold text-base border-2 border-[#D4AF37] hover:bg-[#e6c97a] transition"
         onClick={() => window.location.href = '/user'}
         style={{ display: 'block', marginLeft: 0 }}
       >
