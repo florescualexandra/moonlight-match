@@ -79,13 +79,13 @@ export default function RegisterPage() {
             <label className="block text-[#23283a] text-sm font-bold mb-2" htmlFor="confirmPassword">
               Confirm Password
             </label>
-          <input
-            type="password"
+            <input
+              type="password"
               id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-[#23283a] leading-tight focus:outline-none focus:shadow-outline"
-            required
+              className="px-4 py-3 rounded-full border-2 border-[#D4AF37] focus:outline-none focus:ring-2 focus:ring-[#D4AF37] text-[#181c24] text-lg"
+              required
             />
           </div>
           <div className="mb-6">
